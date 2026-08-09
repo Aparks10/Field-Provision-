@@ -485,7 +485,7 @@ function resumePendingAction(){
   if(!pendingAction) return;
   const action = pendingAction;
   pendingAction = null;
-  if(action.type === 'vendor') document.getElementById('vendor-dialog').showModal();
+  if(action.type === 'vendor'){ populateVendorFormCheckboxes(); document.getElementById('vendor-dialog').showModal(); }
   if(action.type === 'review'){ reviewTargetVendorId = action.vendorId; openReviewDialog(); }
   if(action.type === 'quote'){ quoteTargetVendorId = action.vendorId; document.getElementById('quote-dialog').showModal(); }
 }
