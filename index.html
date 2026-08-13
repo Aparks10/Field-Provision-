@@ -196,7 +196,14 @@
     <div id="signup-panel">
       <div class="field"><label>Full Name</label><input id="su-name" placeholder="Jane Davis"></div>
       <div class="field"><label>Email</label><input id="su-email" type="email" placeholder="jane@school.edu"></div>
-      <div class="field"><label>Password</label><input id="su-password" type="password" placeholder="At least 8 characters"></div>
+      <div class="field"><label>Password</label><input id="su-password" type="password" placeholder="At least 8 characters"></div><div class="hint">Must be at least 8 characters</div>
+<div class="field">
+  <label>Confirm Password</label>
+  <input id="su-password-confirm" type="password" placeholder="Re-enter your password">
+</div>
+<label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500; text-transform:none; letter-spacing:normal; color:var(--black); margin-top:-6px; margin-bottom:12px;">
+  <input type="checkbox" id="su-show-password" style="margin:0;"> Show password
+</label>
       <div class="field"><label>I am a...</label>
         <select id="su-role"><option value="coach">Coach</option><option value="vendor">Vendor</option></select>
       </div>
@@ -478,7 +485,7 @@ document.getElementById('auth-submit').onclick = async ()=>{
   const user_role = document.getElementById('su-role').value;
   const school_or_organization = document.getElementById('su-org').value.trim();
   if(!full_name || !email || !password){ showAuthError('Name, email, and password are required'); return; }
-  if(password.length < 8){ showAuthError('Password must be at least 8 characters'); return; }
+  if(password.length < 8){ showAuthError('Password must be at least 8 characters'); return; } if(password.length < 8){ showAuthError('Password must be at least 8 characters'); return; }
 
   const { error } = await supabaseClient.auth.signUp({
     email, password,
@@ -859,7 +866,7 @@ window.addEventListener('unhandledrejection', function(e){
   showBanner(`<strong>Something went wrong.</strong> Error: <code>${(e.reason && e.reason.message) || e.reason}</code>.
     Screenshot this message and send it back.`);
 });
-</script>
+<document.getElementById('su-show-password').addEventListener('change', function(){ const type = this.checked ? 'text' : 'password'; document.getElementById('su-password').type = type; document.getElementById('su-password-confirm').type = type; });/script>
 
 </body>
 </html>
