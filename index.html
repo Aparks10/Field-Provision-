@@ -197,6 +197,8 @@
       <div class="field"><label>Full Name</label><input id="su-name" placeholder="Jane Davis"></div>
       <div class="field"><label>Email</label><input id="su-email" type="email" placeholder="jane@school.edu"></div>
       <div class="field"><label>Password</label><input id="su-password" type="password" placeholder="At least 8 characters"></div>
+      <div class="field"><label>Confirm Password</label><input id="su-password-confirm" type="password" placeholder="Re-enter your password"></div>
+      <div class="hint">Password must be at least 8 characters, entered twice to confirm.</div>
       <div class="field"><label>I am a...</label>
         <select id="su-role"><option value="coach">Coach</option><option value="vendor">Vendor</option></select>
       </div>
@@ -257,7 +259,7 @@
   <div class="dlg-head"><h3>Request a Quote</h3></div>
   <div class="dlg-body">
     <div class="row2">
-      <div class="field"><label>Sport</label><input id="q-sport" placeholder="Soccer"></div>
+      <div class="field"><label>Sport</label><select id="q-sport"></select></div>
       <div class="field"><label>Needed By</label><input id="q-needed" type="date"></div>
     </div>
     <div class="field"><label>What do you need?</label><textarea id="q-details" placeholder="Tell the vendor what you're looking for"></textarea></div>
@@ -321,15 +323,20 @@ window.addEventListener('error', function(e){
 
 // Fixed taxonomy — edit these lists to add/remove options across the whole app
 const CATEGORY_OPTIONS = [
-  'Awards', 'Education, Training & Analytics', 'Fundraising & Concessions',
-  'Outdoor Maintenance & Improvements', 'Signage, Advertising & Branding',
-  'Sports Equipment & Repairs', 'Uniforms & Clothing', 'Officials & Umpires',
-  'Photography & Media', 'Transportation'
+  'Awards & Recognition', 'Athletic Footwear & Accessories', 'Team Uniforms & Apparel',
+  'Spirit Wear & Fan Gear', 'Signs, Banners & Displays', 'Graphic Design & Branding',
+  'Fundraising', 'Field Maintenance & Turf Management', 'Field Construction & Supplies',
+  'Facility Improvements', 'Sporting Goods & Equipment', 'Strength & Conditioning',
+  'Protective Equipment & Safety', 'Coaching Technology & Analytics',
+  'Athletic Training & Performance', 'Photography & Video Production',
+  'Officials & Umpires', 'Transportation & Travel', 'Scoreboards & Game Day Electronics',
+  'Payment Processing & Financial Services'
 ];
 const SPORT_OPTIONS = [
-  'All Sports', 'Football', 'Baseball', 'Basketball', 'Soccer', 'Softball',
-  'Volleyball', 'Track & Field', 'Wrestling', 'Golf', 'Tennis', 'Swimming',
-  'Lacrosse', 'Cheerleading'
+  'All Sports', 'Baseball', 'Boys Basketball', 'Girls Basketball', 'Cheerleading',
+  'Cross Country', 'Flag Football', 'Football', 'Golf', 'Gymnastics', 'Lacrosse',
+  'Soccer', 'Softball', 'Swimming & Diving', 'Tennis', 'Track & Field',
+  'Volleyball', 'Wrestling'
 ];
 
 let vendors = [];
@@ -475,10 +482,12 @@ document.getElementById('auth-submit').onclick = async ()=>{
   const full_name = document.getElementById('su-name').value.trim();
   const email = document.getElementById('su-email').value.trim();
   const password = document.getElementById('su-password').value;
+  const passwordConfirm = document.getElementById('su-password-confirm').value;
   const user_role = document.getElementById('su-role').value;
   const school_or_organization = document.getElementById('su-org').value.trim();
-  if(!full_name || !email || !password){ showAuthError('Name, email, and password are required'); return; }
+  if(!full_name || !email || !password || !passwordConfirm){ showAuthError('Name, email, and password (entered twice) are required'); return; }
   if(password.length < 8){ showAuthError('Password must be at least 8 characters'); return; }
+  if(password !== passwordConfirm){ showAuthError('Passwords do not match — please enter the same password in both fields'); return; }
 
   const { error } = await supabaseClient.auth.signUp({
     email, password,
@@ -497,7 +506,7 @@ function resumePendingAction(){
   pendingAction = null;
   if(action.type === 'vendor'){ populateVendorFormCheckboxes(); document.getElementById('vendor-dialog').showModal(); }
   if(action.type === 'review'){ reviewTargetVendorId = action.vendorId; openReviewDialog(); }
-  if(action.type === 'quote'){ quoteTargetVendorId = action.vendorId; document.getElementById('quote-dialog').showModal(); }
+  if(action.type === 'quote'){ quoteTargetVendorId = action.vendorId; populateQuoteSportSelect(); document.getElementById('quote-dialog').showModal(); }
 }
 
 // ============================================================
@@ -514,6 +523,11 @@ async function loadReviews(){
   return error ? [] : data;
 }
 function reviewsFor(vendorId){ return reviews.filter(r=>r.vendor_id===vendorId); }
+
+function populateQuoteSportSelect(){
+  const sel = document.getElementById('q-sport');
+  sel.innerHTML = SPORT_OPTIONS.filter(s=>s!=='All Sports').map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+}
 
 function refreshCatFilter(){
   const catSel = document.getElementById('cat-filter');
@@ -609,7 +623,8 @@ function renderVendors(){
     btn.onclick = ()=>{
       if(!currentProfile){ pendingAction = {type:'quote', vendorId: btn.dataset.quote}; toast('Sign in to request a quote'); openAuth(); return; }
       quoteTargetVendorId = btn.dataset.quote;
-      ['q-sport','q-needed','q-details','q-budget'].forEach(id=>document.getElementById(id).value='');
+      populateQuoteSportSelect();
+      ['q-needed','q-details','q-budget'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('quote-dialog').showModal();
     };
   });
