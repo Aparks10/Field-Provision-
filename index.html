@@ -101,6 +101,10 @@
   .dlg-head h3{margin:0; font-size:21px;}
   .dlg-body{padding:18px 20px;}
   .field{margin-bottom:12px;}
+  .pw-wrap{position:relative;}
+  .pw-wrap input{width:100%; box-sizing:border-box; padding-right:60px;}
+  .pw-toggle{position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--forest, #2f6f4f); font-size:12px; font-weight:600; cursor:pointer; padding:4px 6px;}
+  .pw-toggle:hover{text-decoration:underline;}
   .field label{display:block; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--muted); margin-bottom:4px;}
   .field input, .field textarea, .field select{width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:9px 10px;
     border:1.5px solid var(--line); border-radius:7px; outline:none; background:#FCFBF8;}
@@ -196,18 +200,33 @@
     <div id="signup-panel">
       <div class="field"><label>Full Name</label><input id="su-name" placeholder="Jane Davis"></div>
       <div class="field"><label>Email</label><input id="su-email" type="email" placeholder="jane@school.edu"></div>
-      <div class="field"><label>Password</label><input id="su-password" type="password" placeholder="At least 8 characters"></div>
-      <div class="field"><label>Confirm Password</label><input id="su-password-confirm" type="password" placeholder="Re-enter your password"></div>
+      <div class="field"><label>Password</label>
+        <div class="pw-wrap">
+          <input id="su-password" type="password" placeholder="At least 8 characters">
+          <button type="button" class="pw-toggle" data-toggle-pw="su-password">Show</button>
+        </div>
+      </div>
+      <div class="field"><label>Confirm Password</label>
+        <div class="pw-wrap">
+          <input id="su-password-confirm" type="password" placeholder="Re-enter your password">
+          <button type="button" class="pw-toggle" data-toggle-pw="su-password-confirm">Show</button>
+        </div>
+      </div>
       <div class="hint">Password must be at least 8 characters, entered twice to confirm.</div>
       <div class="field"><label>I am a...</label>
         <select id="su-role"><option value="coach">Coach</option><option value="vendor">Vendor</option></select>
       </div>
-      <div class="field"><label>School / Organization</label><input id="su-org" placeholder="Gwinnett County Public Schools"></div>
+      <div class="field" id="su-org-field"><label id="su-org-label">School / Organization</label><input id="su-org" placeholder="e.g. Lincoln High School"></div>
     </div>
 
     <div id="signin-panel" style="display:none;">
       <div class="field"><label>Email</label><input id="si-email" type="email" placeholder="jane@school.edu"></div>
-      <div class="field"><label>Password</label><input id="si-password" type="password"></div>
+      <div class="field"><label>Password</label>
+        <div class="pw-wrap">
+          <input id="si-password" type="password">
+          <button type="button" class="pw-toggle" data-toggle-pw="si-password">Show</button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="dlg-actions">
@@ -456,6 +475,32 @@ document.getElementById('tab-signin').onclick = ()=>{
   document.getElementById('signup-panel').style.display = 'none';
 };
 
+document.querySelectorAll('[data-toggle-pw]').forEach(btn=>{
+  btn.onclick = ()=>{
+    const input = document.getElementById(btn.dataset.togglePw);
+    const revealed = input.type === 'text';
+    input.type = revealed ? 'password' : 'text';
+    btn.textContent = revealed ? 'Show' : 'Hide';
+  };
+});
+
+function updateOrgFieldForRole(){
+  const role = document.getElementById('su-role').value;
+  const field = document.getElementById('su-org-field');
+  const label = document.getElementById('su-org-label');
+  const input = document.getElementById('su-org');
+  if(role === 'vendor'){
+    field.style.display = 'none';
+    input.value = '';
+  } else {
+    field.style.display = '';
+    label.textContent = 'School / Organization';
+    input.placeholder = 'e.g. Lincoln High School';
+  }
+}
+document.getElementById('su-role').addEventListener('change', updateOrgFieldForRole);
+updateOrgFieldForRole();
+
 function showAuthError(msg){
   const el = document.getElementById('auth-error');
   el.textContent = msg;
@@ -487,7 +532,14 @@ document.getElementById('auth-submit').onclick = async ()=>{
   const school_or_organization = document.getElementById('su-org').value.trim();
   if(!full_name || !email || !password || !passwordConfirm){ showAuthError('Name, email, and password (entered twice) are required'); return; }
   if(password.length < 8){ showAuthError('Password must be at least 8 characters'); return; }
-  if(password !== passwordConfirm){ showAuthError('Passwords do not match — please enter the same password in both fields'); return; }
+  if(password !== passwordConfirm){
+    showAuthError('Passwords do not match — please enter the same password in both fields');
+    ['su-password','su-password-confirm'].forEach(id=>{
+      document.getElementById(id).type = 'text';
+      document.querySelector(`[data-toggle-pw="${id}"]`).textContent = 'Hide';
+    });
+    return;
+  }
 
   const { error } = await supabaseClient.auth.signUp({
     email, password,
