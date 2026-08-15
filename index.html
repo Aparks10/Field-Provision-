@@ -255,7 +255,13 @@
       <div class="field"><label>Email</label><input id="f-v-email" type="email" placeholder="contact@vendor.com"></div>
     </div>
     <div class="field"><label>Website URL</label><input id="f-v-website" placeholder="https://vendor.com"></div>
-    <div class="field"><label>Logo Image URL</label><input id="f-v-logo" placeholder="https://.../logo.png"></div>
+    <div class="field">
+      <label>Business Photo</label>
+      <input id="f-v-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
+      <div class="hint" id="f-v-logo-status"></div>
+      <img id="f-v-logo-preview" style="display:none; max-width:120px; max-height:120px; border-radius:10px; margin-top:8px; object-fit:cover;">
+      <input type="hidden" id="f-v-logo">
+    </div>
   </div>
   <div class="dlg-actions">
     <button class="btn ghost" data-close="vendor-dialog">Cancel</button>
@@ -563,7 +569,7 @@ function resumePendingAction(){
   if(!pendingAction) return;
   const action = pendingAction;
   pendingAction = null;
-  if(action.type === 'vendor'){ populateVendorFormCheckboxes(); document.getElementById('vendor-dialog').showModal(); }
+  if(action.type === 'vendor'){ populateVendorFormCheckboxes(); resetVendorPhotoField(); document.getElementById('vendor-dialog').showModal(); }
   if(action.type === 'review'){ reviewTargetVendorId = action.vendorId; openReviewDialog(); }
   if(action.type === 'quote'){ quoteTargetVendorId = action.vendorId; populateQuoteSportSelect(); document.getElementById('quote-dialog').showModal(); }
 }
@@ -722,8 +728,46 @@ document.querySelectorAll('#star-picker span').forEach(s=>{
 document.getElementById('open-vendor-form').onclick = ()=>{
   if(!currentProfile){ pendingAction = {type:'vendor'}; toast('Sign in to list a vendor'); openAuth(); return; }
   populateVendorFormCheckboxes();
+  resetVendorPhotoField();
   document.getElementById('vendor-dialog').showModal();
 };
+
+function resetVendorPhotoField(){
+  document.getElementById('f-v-logo').value = '';
+  document.getElementById('f-v-logo-file').value = '';
+  document.getElementById('f-v-logo-status').textContent = '';
+  document.getElementById('f-v-logo-preview').style.display = 'none';
+  document.getElementById('f-v-logo-preview').src = '';
+}
+
+document.getElementById('f-v-logo-file').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!currentProfile){ toast('Sign in to upload a photo'); return; }
+  if(file.size > 5 * 1024 * 1024){ toast('Photo must be under 5MB'); e.target.value = ''; return; }
+
+  const statusEl = document.getElementById('f-v-logo-status');
+  statusEl.textContent = 'Uploading…';
+  document.getElementById('save-vendor').disabled = true;
+
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${currentProfile.id}/${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabaseClient.storage.from('vendor-photos').upload(path, file, { upsert: false });
+  document.getElementById('save-vendor').disabled = false;
+  if(uploadError){
+    statusEl.textContent = '';
+    toast('Photo upload failed: ' + uploadError.message);
+    e.target.value = '';
+    return;
+  }
+
+  const { data: urlData } = supabaseClient.storage.from('vendor-photos').getPublicUrl(path);
+  document.getElementById('f-v-logo').value = urlData.publicUrl;
+  document.getElementById('f-v-logo-preview').src = urlData.publicUrl;
+  document.getElementById('f-v-logo-preview').style.display = '';
+  statusEl.textContent = 'Photo uploaded ✓';
+});
 
 document.getElementById('save-vendor').onclick = async ()=>{
   if(!currentProfile){ toast('Your account is still syncing — please try again in a moment, or sign in again'); return; }
@@ -754,7 +798,8 @@ document.getElementById('save-vendor').onclick = async ()=>{
   vendors = await loadVendors();
   refreshCatFilter(); renderVendors();
   document.getElementById('vendor-dialog').close();
-  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-logo'].forEach(id=>document.getElementById(id).value='');
+  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website'].forEach(id=>document.getElementById(id).value='');
+  resetVendorPhotoField();
   document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
   toast('Vendor listed');
 };
