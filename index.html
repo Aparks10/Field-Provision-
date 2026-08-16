@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Field Provisions</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#3B5D3A">
+<meta name="theme-color" content="#C4C8CC">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Field Provisions">
@@ -60,7 +60,9 @@
   .vendor{background:var(--card); border:1.5px solid var(--line); border-radius:12px; margin-bottom:16px; position:relative; overflow:hidden;}
   .vendor.featured{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold);}
   .featured-badge{position:absolute; top:12px; left:14px; z-index:2; background:var(--gold); color:#fff; font-family:'JetBrains Mono',monospace;
-    font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:3px 9px; border-radius:10px;}
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:6px 14px; border-radius:20px;
+    box-shadow:0 2px 8px rgba(184,145,47,0.55), 0 0 0 2px #fff; display:flex; align-items:center; gap:5px;}
+  .featured-badge::before{content:'★'; font-size:13px;}
   .vendor-photo-banner{width:100%; height:180px; object-fit:cover; display:block; background:var(--gray-light);}
   .vendor-photo-banner-placeholder{width:100%; height:180px; display:flex; align-items:center; justify-content:center;
     background:var(--gray-light); font-family:'Oswald',sans-serif; font-weight:700; font-size:44px; color:var(--forest);}
@@ -614,7 +616,14 @@ document.getElementById('auth-submit').onclick = async ()=>{
     const password = document.getElementById('si-password').value;
     if(!email || !password){ showAuthError('Enter your email and password'); return; }
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if(error){ showAuthError(error.message); return; }
+    if(error){
+      if(error.message.toLowerCase().includes('email not confirmed')){
+        showAuthError('Your email isn\'t confirmed yet — check your inbox (' + email + ') for the confirmation link we sent when you signed up.');
+      } else {
+        showAuthError(error.message);
+      }
+      return;
+    }
     await refreshSession();
     document.getElementById('auth-dialog').close();
     toast('Welcome back');
