@@ -69,6 +69,28 @@
     display:flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif; font-weight:700; font-size:20px;
     color:var(--forest); border:1px solid var(--line);}
   .vendor-body{flex:1; min-width:0;}
+  .vendor-name{cursor:pointer;}
+  .vendor-name:hover{text-decoration:underline;}
+  .fav-btn{position:absolute; top:12px; right:14px; z-index:2; background:rgba(255,255,255,0.9); border:none; border-radius:50%;
+    width:34px; height:34px; font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+  .fav-btn.active{color:#c0392b;}
+  .vendor-select-wrap{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); margin-top:4px;}
+  .select-bar{position:fixed; bottom:0; left:0; right:0; background:var(--forest); color:#fff; padding:12px 20px;
+    display:flex; align-items:center; justify-content:center; gap:14px; z-index:50; box-shadow:0 -2px 10px rgba(0,0,0,0.2);}
+  .select-bar button{background:#fff; color:var(--forest); border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer;}
+  .select-bar .clear-sel{background:none; color:#fff; text-decoration:underline; font-weight:400; padding:0;}
+  .nav-badge{display:inline-block; background:var(--gold); color:#fff; font-size:10px; font-weight:700; border-radius:10px;
+    padding:1px 6px; margin-left:6px; vertical-align:middle;}
+  .fav-filter{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; white-space:nowrap;}
+  #view-vendor-detail{max-width:640px; margin:0 auto;}
+  .vd-back{background:none; border:none; color:var(--forest); font-weight:700; cursor:pointer; margin-bottom:12px; padding:0; font-size:14px;}
+  .vd-banner{width:100%; height:240px; object-fit:cover; border-radius:12px; background:var(--gray-light);}
+  .vd-banner-placeholder{width:100%; height:240px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:var(--gray-light); font-family:'Oswald',sans-serif; font-weight:700; font-size:60px; color:var(--forest);}
+  .vd-header{display:flex; align-items:flex-start; gap:14px; margin-top:16px;}
+  .vd-name{font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; text-transform:uppercase;}
+  .vd-section{margin-top:18px;}
+  .vd-section h4{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:6px;}
   .vendor-cat{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--forest); font-family:'JetBrains Mono',monospace;}
   .tag-row{display:flex; flex-wrap:wrap; gap:5px; margin:4px 0 8px;}
   .tag-pill{font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.03em;
@@ -175,7 +197,7 @@
 <nav class="tabs">
   <div class="tab-track">
     <button class="active" data-view="vendors">Vendors</button>
-    <button data-view="requests">My Requests</button>
+    <button data-view="requests">My Requests<span class="nav-badge" id="requests-badge" style="display:none;"></span></button>
   </div>
 </nav>
 
@@ -188,9 +210,15 @@
       </div>
       <select id="cat-filter"><option value="">All categories</option></select>
       <select id="sport-filter"><option value="">All sports</option></select>
+      <label class="fav-filter"><input type="checkbox" id="fav-filter-check"> ❤ Favorites only</label>
       <button class="btn forest" id="open-vendor-form">+ List a Vendor</button>
     </div>
     <div id="vendors-list"><div class="loading">Loading vendors…</div></div>
+  </div>
+
+  <div class="view" id="view-vendor-detail">
+    <button class="vd-back" id="vd-back-btn">← Back to vendors</button>
+    <div id="vendor-detail-body"></div>
   </div>
 
   <div class="view" id="view-requests">
@@ -201,6 +229,12 @@
     <div id="requests-list"><div class="loading">Sign in to see your requests…</div></div>
   </div>
 </main>
+
+<div class="select-bar" id="select-bar" style="display:none;">
+  <span id="select-bar-count">0 selected</span>
+  <button id="select-bar-request">Request quotes from selected</button>
+  <button class="clear-sel" id="select-bar-clear">Clear</button>
+</div>
 
 <footer>Field Provisions · <a id="admin-link">Admin</a></footer>
 
@@ -451,6 +485,19 @@ async function refreshSession(){
     currentProfile = null;
   }
   renderUserArea();
+  await loadFavorites();
+  await updateRequestsBadge();
+}
+
+async function updateRequestsBadge(){
+  const badge = document.getElementById('requests-badge');
+  if(!currentProfile){ badge.style.display = 'none'; return; }
+  const { data: myVendors } = await supabaseClient.from('vendors').select('vendor_id').eq('claimed_by_vendor_id', currentProfile.id);
+  const vendorIds = (myVendors||[]).map(v=>v.vendor_id);
+  if(vendorIds.length===0){ badge.style.display = 'none'; return; }
+  const { count } = await supabaseClient.from('quote_requests').select('*', {count:'exact', head:true}).in('vendor_id', vendorIds).eq('status', 'open');
+  if(count && count > 0){ badge.textContent = count; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
 }
 
 function renderUserArea(){
@@ -629,13 +676,15 @@ function renderVendors(){
   const q = document.getElementById('vendor-search').value.toLowerCase();
   const cat = document.getElementById('cat-filter').value;
   const sport = document.getElementById('sport-filter').value;
+  const favOnly = document.getElementById('fav-filter-check').checked;
   let filtered = vendors.filter(v=>{
     const categories = v.categories || [];
     const sports = v.sports || [];
     const matchesQ = !q || [v.business_name, categories.join(' '), v.description].join(' ').toLowerCase().includes(q);
     const matchesCat = !cat || categories.includes(cat);
     const matchesSport = !sport || sports.includes(sport) || sports.includes('All Sports');
-    return matchesQ && matchesCat && matchesSport;
+    const matchesFav = !favOnly || favoriteIds.has(v.vendor_id);
+    return matchesQ && matchesCat && matchesSport && matchesFav;
   });
 
   const list = document.getElementById('vendors-list');
@@ -658,14 +707,16 @@ function renderVendors(){
     const bannerHtml = v.logo_image
       ? `<img class="vendor-photo-banner" src="${escapeHtml(v.logo_image)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'vendor-photo-banner-placeholder',textContent:'${escapeHtml(initials(v.business_name))}'}))">`
       : `<div class="vendor-photo-banner-placeholder">${escapeHtml(initials(v.business_name))}</div>`;
+    const isFav = favoriteIds.has(v.vendor_id);
     return `
     <div class="vendor ${v.is_featured?'featured':''}">
       ${v.is_featured?'<div class="featured-badge">Featured</div>':''}
+      <button class="fav-btn ${isFav?'active':''}" data-fav="${v.vendor_id}" title="Save to favorites">${isFav?'❤':'♡'}</button>
       ${bannerHtml}
       <div class="vendor-top">
         ${logoHtml}
         <div class="vendor-body">
-          <div class="vendor-name">${escapeHtml(v.business_name)}</div>
+          <div class="vendor-name" data-detail="${v.vendor_id}">${escapeHtml(v.business_name)}</div>
           <div class="tag-row">
             ${categories.map(c=>`<span class="tag-pill">${escapeHtml(c)}</span>`).join('')}
             ${sports.map(s=>`<span class="tag-pill sport">${escapeHtml(s)}</span>`).join('')}
@@ -682,6 +733,7 @@ function renderVendors(){
             <button class="primary" data-quote="${v.vendor_id}">Request a Quote</button>
             <button data-review="${v.vendor_id}">Write a review</button>
           </div>
+          <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
           <div class="reviews-toggle" data-toggle="${v.vendor_id}">${rs.length>0 ? 'Show reviews ('+rs.length+')' : ''}</div>
           <div class="reviews-panel" id="panel-${v.vendor_id}">
             ${rs.map(r=>`
@@ -724,7 +776,150 @@ function renderVendors(){
       t.textContent = panel.classList.contains('open') ? 'Hide reviews' : 'Show reviews ('+reviewsFor(t.dataset.toggle).length+')';
     };
   });
+  list.querySelectorAll('[data-fav]').forEach(btn=>{
+    btn.onclick = ()=>toggleFavorite(btn.dataset.fav);
+  });
+  list.querySelectorAll('[data-detail]').forEach(el=>{
+    el.onclick = ()=>openVendorDetail(el.dataset.detail);
+  });
+  list.querySelectorAll('[data-select]').forEach(cb=>{
+    cb.onchange = ()=>{
+      if(cb.checked) selectedVendorIds.add(cb.dataset.select); else selectedVendorIds.delete(cb.dataset.select);
+      updateSelectBar();
+    };
+  });
 }
+
+// ============================================================
+// FAVORITES
+// ============================================================
+let favoriteIds = new Set();
+let selectedVendorIds = new Set();
+
+async function loadFavorites(){
+  if(!currentProfile){ favoriteIds = new Set(); return; }
+  const { data, error } = await supabaseClient.from('favorites').select('vendor_id').eq('user_id', currentProfile.id);
+  favoriteIds = error ? new Set() : new Set(data.map(r=>r.vendor_id));
+}
+
+async function toggleFavorite(vendorId){
+  if(!currentProfile){ toast('Sign in to save favorites'); openAuth(); return; }
+  if(favoriteIds.has(vendorId)){
+    const { error } = await supabaseClient.from('favorites').delete().eq('user_id', currentProfile.id).eq('vendor_id', vendorId);
+    if(error){ toast('Could not update favorite: ' + error.message); return; }
+    favoriteIds.delete(vendorId);
+  } else {
+    const { error } = await supabaseClient.from('favorites').insert({user_id: currentProfile.id, vendor_id: vendorId});
+    if(error){ toast('Could not update favorite: ' + error.message); return; }
+    favoriteIds.add(vendorId);
+  }
+  renderVendors();
+}
+
+document.getElementById('fav-filter-check').addEventListener('change', renderVendors);
+
+// ============================================================
+// GROUP QUOTE SELECTION BAR
+// ============================================================
+function updateSelectBar(){
+  const bar = document.getElementById('select-bar');
+  const n = selectedVendorIds.size;
+  if(n===0){ bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  document.getElementById('select-bar-count').textContent = n + ' vendor' + (n===1?'':'s') + ' selected';
+}
+document.getElementById('select-bar-clear').onclick = ()=>{
+  selectedVendorIds.clear();
+  updateSelectBar();
+  renderVendors();
+};
+document.getElementById('select-bar-request').onclick = ()=>{
+  if(!currentProfile){ toast('Sign in to request quotes'); openAuth(); return; }
+  if(selectedVendorIds.size===0) return;
+  quoteTargetVendorId = null; // multi mode
+  populateQuoteSportSelect();
+  ['q-needed','q-details','q-budget'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('quote-dialog').showModal();
+};
+
+// ============================================================
+// VENDOR DETAIL PAGE
+// ============================================================
+function openVendorDetail(vendorId){
+  const v = vendors.find(x=>x.vendor_id===vendorId);
+  if(!v){ toast('Vendor not found'); return; }
+  const rs = reviewsFor(v.vendor_id);
+  const categories = v.categories || [];
+  const sports = v.sports || [];
+  const isFav = favoriteIds.has(v.vendor_id);
+  const bannerHtml = v.logo_image
+    ? `<img class="vd-banner" src="${escapeHtml(v.logo_image)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'vd-banner-placeholder',textContent:'${escapeHtml(initials(v.business_name))}'}))">`
+    : `<div class="vd-banner-placeholder">${escapeHtml(initials(v.business_name))}</div>`;
+
+  document.getElementById('vendor-detail-body').innerHTML = `
+    <div style="position:relative;">
+      ${bannerHtml}
+      <button class="fav-btn ${isFav?'active':''}" data-fav="${v.vendor_id}" title="Save to favorites" style="position:absolute;">${isFav?'❤':'♡'}</button>
+    </div>
+    <div class="vd-header">
+      <div>
+        <div class="vd-name">${escapeHtml(v.business_name)}</div>
+        <div class="tag-row">
+          ${categories.map(c=>`<span class="tag-pill">${escapeHtml(c)}</span>`).join('')}
+          ${sports.map(s=>`<span class="tag-pill sport">${escapeHtml(s)}</span>`).join('')}
+        </div>
+        <div class="vendor-rating">
+          <span class="stars">${starString(v.average_rating)}</span>
+          <span>${v.total_reviews>0 ? Number(v.average_rating).toFixed(1)+' ('+v.total_reviews+' review'+(v.total_reviews===1?'':'s')+')' : 'No reviews yet'}</span>
+        </div>
+      </div>
+    </div>
+    ${v.description?`<div class="vd-section"><h4>About</h4><div class="vendor-desc">${escapeHtml(v.description)}</div></div>`:''}
+    <div class="vd-section">
+      <div class="vendor-actions">
+        ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">📞 Call</a>`:''}
+        ${v.email?`<a href="mailto:${escapeHtml(v.email)}">✉️ Email</a>`:''}
+        ${v.website_url?`<a href="${escapeHtml(v.website_url)}" target="_blank" rel="noopener">🔗 Website</a>`:''}
+        <button class="primary" data-quote="${v.vendor_id}">Request a Quote</button>
+        <button data-review="${v.vendor_id}">Write a review</button>
+      </div>
+    </div>
+    <div class="vd-section">
+      <h4>Reviews (${rs.length})</h4>
+      ${rs.length===0 ? '<div style="color:var(--muted);">No reviews yet.</div>' : rs.map(r=>`
+        <div class="review">
+          <div class="review-head">
+            <span class="review-author">${escapeHtml(r.author_name)} <span class="review-role">· ${escapeHtml(r.author_role||'')}</span></span>
+            <span class="review-date">${relTime(r.created_at)}</span>
+          </div>
+          <div class="stars" style="font-size:11px;">${starString(r.rating)}</div>
+          <div class="review-text">${escapeHtml(r.review_text)}</div>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('vendor-detail-body').querySelector('[data-fav]').onclick = async ()=>{ await toggleFavorite(v.vendor_id); openVendorDetail(vendorId); };
+  document.getElementById('vendor-detail-body').querySelector('[data-quote]').onclick = ()=>{
+    if(!currentProfile){ pendingAction = {type:'quote', vendorId: v.vendor_id}; toast('Sign in to request a quote'); openAuth(); return; }
+    quoteTargetVendorId = v.vendor_id;
+    populateQuoteSportSelect();
+    ['q-needed','q-details','q-budget'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('quote-dialog').showModal();
+  };
+  document.getElementById('vendor-detail-body').querySelector('[data-review]').onclick = ()=>{
+    if(!currentProfile){ pendingAction = {type:'review', vendorId: v.vendor_id}; toast('Sign in to write a review'); openAuth(); return; }
+    reviewTargetVendorId = v.vendor_id;
+    openReviewDialog();
+  };
+
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v2=>v2.classList.remove('active'));
+  document.getElementById('view-vendor-detail').classList.add('active');
+}
+document.getElementById('vd-back-btn').onclick = ()=>{
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-vendors').classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view==='vendors'));
+};
 
 function openReviewDialog(){
   selectedRating = 0;
@@ -843,18 +1038,30 @@ document.getElementById('save-quote').onclick = async ()=>{
   if(!currentProfile){ toast('Your account is still syncing — please try again in a moment, or sign in again'); return; }
   const details = document.getElementById('q-details').value.trim();
   if(!details){ toast('Describe what you need'); return; }
-  const row = {
+
+  const base = {
     requester_id: currentProfile.id,
-    vendor_id: quoteTargetVendorId,
     sport: document.getElementById('q-sport').value.trim(),
     needed_by: document.getElementById('q-needed').value || null,
     details,
     budget: document.getElementById('q-budget').value || null
   };
-  const { error } = await supabaseClient.from('quote_requests').insert(row);
+
+  // quoteTargetVendorId is null when this was opened from the "Select vendors" group-quote bar
+  const targetIds = quoteTargetVendorId ? [quoteTargetVendorId] : [...selectedVendorIds];
+  if(targetIds.length===0){ toast('No vendors selected'); return; }
+
+  const rows = targetIds.map(vendor_id => ({...base, vendor_id}));
+  const { error } = await supabaseClient.from('quote_requests').insert(rows);
   if(error){ toast('Could not send request: ' + error.message); return; }
   document.getElementById('quote-dialog').close();
-  toast('Request sent to vendor');
+  toast(targetIds.length > 1 ? `Request sent to ${targetIds.length} vendors` : 'Request sent to vendor');
+
+  if(!quoteTargetVendorId){
+    selectedVendorIds.clear();
+    updateSelectBar();
+    renderVendors();
+  }
 };
 
 document.getElementById('vendor-search').addEventListener('input', ()=>{
@@ -921,7 +1128,15 @@ async function renderRequests(){
           <span class="status-pill ${r.status==='open'?'open':''}">${escapeHtml(r.status)}</span>
         </div>
         <div>${escapeHtml(r.details)}</div>
+        ${r.status==='open' ? `<button data-closereq="${r.id}" style="margin-top:8px;">Mark as handled</button>` : ''}
       </div>`).join('');
+    list.querySelectorAll('[data-closereq]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        await supabaseClient.from('quote_requests').update({status:'closed'}).eq('id', btn.dataset.closereq);
+        await updateRequestsBadge();
+        renderRequests();
+      };
+    });
   }
 }
 
