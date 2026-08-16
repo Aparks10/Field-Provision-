@@ -295,7 +295,7 @@
 
 <!-- VENDOR DIALOG -->
 <dialog id="vendor-dialog">
-  <div class="dlg-head"><h3>List a Vendor</h3></div>
+  <div class="dlg-head"><h3 id="vendor-dialog-title">List a Vendor</h3></div>
   <div class="dlg-body">
     <div class="field"><label>Business Name</label><input id="f-v-name" placeholder="Athens Team Sports"></div>
     <div class="field"><label>Categories</label><div class="checkbox-group" id="f-v-categories"></div></div>
@@ -449,6 +449,7 @@ let currentUser = null; // Supabase auth user
 let currentProfile = null; // row from profiles table
 let reviewTargetVendorId = null;
 let quoteTargetVendorId = null;
+let editingVendorId = null;
 let selectedRating = 0;
 
 function toast(msg){
@@ -662,7 +663,7 @@ function resumePendingAction(){
   if(!pendingAction) return;
   const action = pendingAction;
   pendingAction = null;
-  if(action.type === 'vendor'){ populateVendorFormCheckboxes(); resetVendorPhotoField(); document.getElementById('vendor-dialog').showModal(); }
+  if(action.type === 'vendor'){ editingVendorId = null; populateVendorFormCheckboxes(); resetVendorPhotoField(); document.getElementById('vendor-dialog').showModal(); }
   if(action.type === 'review'){ reviewTargetVendorId = action.vendorId; openReviewDialog(); }
   if(action.type === 'quote'){ quoteTargetVendorId = action.vendorId; populateQuoteSportSelect(); document.getElementById('quote-dialog').showModal(); }
 }
@@ -784,6 +785,7 @@ function renderVendors(){
             ${v.website_url?`<a href="${escapeHtml(v.website_url)}" target="_blank" rel="noopener">🔗 Website</a>`:''}
             <button class="primary" data-quote="${v.vendor_id}">Request a Quote</button>
             <button data-review="${v.vendor_id}">Write a review</button>
+            ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">✏️ Edit my listing</button>` : ''}
           </div>
           <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
           <div class="reviews-toggle" data-toggle="${v.vendor_id}">${rs.length>0 ? 'Show reviews ('+rs.length+')' : ''}</div>
@@ -828,6 +830,9 @@ function applyRfpTemplate(vendorId){
       reviewTargetVendorId = btn.dataset.review;
       openReviewDialog();
     };
+  });
+  list.querySelectorAll('[data-edit-vendor]').forEach(btn=>{
+    btn.onclick = ()=>openVendorEditForm(btn.dataset.editVendor);
   });
   list.querySelectorAll('[data-toggle]').forEach(t=>{
     if(!t.textContent) return;
@@ -999,10 +1004,45 @@ document.querySelectorAll('#star-picker span').forEach(s=>{
 
 document.getElementById('open-vendor-form').onclick = ()=>{
   if(!currentProfile){ pendingAction = {type:'vendor'}; toast('Sign in to list a vendor'); openAuth(); return; }
+  editingVendorId = null;
+  document.getElementById('vendor-dialog-title').textContent = 'List a Vendor';
+  document.getElementById('save-vendor').textContent = 'List Vendor';
   populateVendorFormCheckboxes();
   resetVendorPhotoField();
+  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
   document.getElementById('vendor-dialog').showModal();
 };
+
+function openVendorEditForm(vendorId){
+  const v = vendors.find(x=>x.vendor_id===vendorId);
+  if(!v){ toast('Vendor not found'); return; }
+  editingVendorId = vendorId;
+  document.getElementById('vendor-dialog-title').textContent = 'Edit My Listing';
+  document.getElementById('save-vendor').textContent = 'Save Changes';
+  populateVendorFormCheckboxes();
+  resetVendorPhotoField();
+  document.getElementById('f-v-name').value = v.business_name || '';
+  document.getElementById('f-v-desc').value = v.description || '';
+  document.getElementById('f-v-phone').value = v.phone_number || '';
+  document.getElementById('f-v-email').value = v.email || '';
+  document.getElementById('f-v-website').value = v.website_url || '';
+  document.getElementById('f-v-promotion').value = v.promotion || '';
+  if(v.logo_image){
+    document.getElementById('f-v-logo').value = v.logo_image;
+    document.getElementById('f-v-logo-preview').src = v.logo_image;
+    document.getElementById('f-v-logo-preview').style.display = '';
+  }
+  (v.categories||[]).forEach(c=>{
+    const el = document.querySelector(`#f-v-categories input[value="${CSS.escape(c)}"]`);
+    if(el) el.checked = true;
+  });
+  (v.sports||[]).forEach(s=>{
+    const el = document.querySelector(`#f-v-sports input[value="${CSS.escape(s)}"]`);
+    if(el) el.checked = true;
+  });
+  document.getElementById('vendor-dialog').showModal();
+}
 
 function resetVendorPhotoField(){
   document.getElementById('f-v-logo').value = '';
@@ -1063,18 +1103,27 @@ document.getElementById('save-vendor').onclick = async ()=>{
     email: vendorEmail,
     website_url,
     logo_image: document.getElementById('f-v-logo').value.trim(),
-    promotion: document.getElementById('f-v-promotion').value.trim() || null,
-    claimed_by_vendor_id: currentProfile.user_role === 'vendor' ? currentProfile.id : null
+    promotion: document.getElementById('f-v-promotion').value.trim() || null
   };
-  const { error } = await supabaseClient.from('vendors').insert(row);
-  if(error){ toast('Could not save vendor: ' + error.message); return; }
+
+  if(editingVendorId){
+    const { error } = await supabaseClient.from('vendors').update(row).eq('vendor_id', editingVendorId);
+    if(error){ toast('Could not save changes: ' + error.message); return; }
+    toast('Listing updated');
+  } else {
+    row.claimed_by_vendor_id = currentProfile.user_role === 'vendor' ? currentProfile.id : null;
+    const { error } = await supabaseClient.from('vendors').insert(row);
+    if(error){ toast('Could not save vendor: ' + error.message); return; }
+    toast('Vendor listed');
+  }
+
   vendors = await loadVendors();
   refreshCatFilter(); renderVendors();
   document.getElementById('vendor-dialog').close();
+  editingVendorId = null;
   ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion'].forEach(id=>document.getElementById(id).value='');
   resetVendorPhotoField();
   document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
-  toast('Vendor listed');
 };
 
 document.getElementById('save-review').onclick = async ()=>{
