@@ -83,6 +83,11 @@
     padding:1px 6px; margin-left:6px; vertical-align:middle;}
   .fav-filter{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; white-space:nowrap;}
   #view-vendor-detail{max-width:640px; margin:0 auto;}
+  .promo-banner{background:linear-gradient(90deg, var(--gold), #d4a843); color:#fff; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; margin-top:8px;}
+  .promotions-strip{display:flex; gap:12px; overflow-x:auto; padding-bottom:10px; margin-bottom:16px;}
+  .promotions-strip .promo-card{flex:0 0 auto; min-width:220px; background:var(--card); border:1.5px solid var(--gold); border-radius:12px; padding:12px 14px;}
+  .promotions-strip .promo-card .promo-vendor{font-family:'Oswald',sans-serif; font-weight:700; font-size:14px; margin-bottom:4px;}
+  .promotions-strip .promo-card .promo-text{font-size:13px; color:var(--black);}
   .vd-back{background:none; border:none; color:var(--forest); font-weight:700; cursor:pointer; margin-bottom:12px; padding:0; font-size:14px;}
   .vd-banner{width:100%; height:240px; object-fit:cover; border-radius:12px; background:var(--gray-light);}
   .vd-banner-placeholder{width:100%; height:240px; border-radius:12px; display:flex; align-items:center; justify-content:center;
@@ -213,6 +218,7 @@
       <label class="fav-filter"><input type="checkbox" id="fav-filter-check"> ❤ Favorites only</label>
       <button class="btn forest" id="open-vendor-form">+ List a Vendor</button>
     </div>
+    <div id="promotions-strip" class="promotions-strip" style="display:none;"></div>
     <div id="vendors-list"><div class="loading">Loading vendors…</div></div>
   </div>
 
@@ -300,6 +306,7 @@
       <div class="field"><label>Email</label><input id="f-v-email" type="email" placeholder="contact@vendor.com"></div>
     </div>
     <div class="field"><label>Website URL</label><input id="f-v-website" placeholder="https://vendor.com"></div>
+    <div class="field"><label>Current Promotion (optional)</label><input id="f-v-promotion" placeholder="e.g. 10% off all team apparel through September"></div>
     <div class="field">
       <label>Business Photo</label>
       <input id="f-v-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
@@ -409,6 +416,25 @@ const CATEGORY_OPTIONS = [
   'Officials & Umpires', 'Transportation & Travel', 'Scoreboards & Game Day Electronics',
   'Payment Processing & Financial Services'
 ];
+
+// RFP checklist templates: helps coaches include what the vendor actually
+// needs to give a fast, accurate quote. Keyed by category name.
+const RFP_TEMPLATES = {
+  'Team Uniforms & Apparel': 'Quantity needed:\nSizes (breakdown by size):\nDeadline needed by:\nTeam colors:\nLogo/artwork file available? (yes/no):\n',
+  'Spirit Wear & Fan Gear': 'Quantity needed:\nSizes (breakdown by size):\nDeadline needed by:\nDesign/logo file available? (yes/no):\n',
+  'Awards & Recognition': 'Quantity of awards needed:\nEngraving text/names:\nDeadline needed by:\n',
+  'Signs, Banners & Displays': 'Size/dimensions needed:\nQuantity:\nArtwork/logo file available? (yes/no):\nDeadline needed by:\n',
+  'Graphic Design & Branding': 'Project description:\nDeadline needed by:\nExisting brand materials to reference:\n',
+  'Athletic Footwear & Accessories': 'Quantity needed:\nSizes (breakdown by size):\nDeadline needed by:\n',
+  'Sporting Goods & Equipment': 'Item(s) needed and quantity:\nDeadline needed by:\n',
+  'Protective Equipment & Safety': 'Item(s) needed and quantity:\nSizes if applicable:\nDeadline needed by:\n',
+  'Field Maintenance & Turf Management': 'Field size/dimensions:\nService needed (mowing, painting, turf repair, etc.):\nDesired date:\n',
+  'Field Construction & Supplies': 'Project description:\nField size/dimensions:\nTimeline:\n',
+  'Facility Improvements': 'Project description:\nLocation/facility:\nTimeline:\n',
+  'Photography & Video Production': 'Event/team to photograph:\nDate needed:\nNumber of athletes/team size:\n',
+  'Transportation & Travel': 'Pickup and destination:\nDate and time:\nNumber of passengers:\n',
+  'Scoreboards & Game Day Electronics': 'Equipment needed:\nField/facility details:\nTimeline:\n'
+};
 const SPORT_OPTIONS = [
   'All Sports', 'Baseball', 'Boys Basketball', 'Girls Basketball', 'Cheerleading',
   'Cross Country', 'Flag Football', 'Football', 'Golf', 'Gymnastics', 'Lacrosse',
@@ -698,6 +724,21 @@ function renderVendors(){
   });
 
   const list = document.getElementById('vendors-list');
+
+  // Promotions strip — shows vendors with an active promotion, unaffected by filters
+  const promoStrip = document.getElementById('promotions-strip');
+  const withPromos = vendors.filter(v=>v.promotion && v.promotion.trim());
+  if(withPromos.length>0){
+    promoStrip.style.display = '';
+    promoStrip.innerHTML = withPromos.map(v=>`
+      <div class="promo-card">
+        <div class="promo-vendor">${escapeHtml(v.business_name)}</div>
+        <div class="promo-text">🏷️ ${escapeHtml(v.promotion)}</div>
+      </div>`).join('');
+  } else {
+    promoStrip.style.display = 'none';
+  }
+
   if(!configured){
     list.innerHTML = `<div class="empty"><div class="display">Not connected yet</div>Add your Supabase project details at the top of the script to load real vendors.</div>`;
     return;
@@ -736,6 +777,7 @@ function renderVendors(){
             <span>${v.total_reviews>0 ? Number(v.average_rating).toFixed(1)+' ('+v.total_reviews+' review'+(v.total_reviews===1?'':'s')+')' : 'No reviews yet'}</span>
           </div>
           ${v.description?`<div class="vendor-desc">${escapeHtml(v.description)}</div>`:''}
+          ${v.promotion?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
           <div class="vendor-actions">
             ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">📞 Call</a>`:''}
             ${v.email?`<a href="mailto:${escapeHtml(v.email)}">✉️ Email</a>`:''}
@@ -762,12 +804,21 @@ function renderVendors(){
     </div>`;
   }).join('');
 
+function applyRfpTemplate(vendorId){
+  const v = vendors.find(x=>x.vendor_id===vendorId);
+  if(!v) return;
+  const cats = v.categories || [];
+  const template = cats.map(c=>RFP_TEMPLATES[c]).find(t=>t);
+  if(template) document.getElementById('q-details').value = template;
+}
+
   list.querySelectorAll('[data-quote]').forEach(btn=>{
     btn.onclick = ()=>{
       if(!currentProfile){ pendingAction = {type:'quote', vendorId: btn.dataset.quote}; toast('Sign in to request a quote'); openAuth(); return; }
       quoteTargetVendorId = btn.dataset.quote;
       populateQuoteSportSelect();
       ['q-needed','q-details','q-budget'].forEach(id=>document.getElementById(id).value='');
+      applyRfpTemplate(quoteTargetVendorId);
       document.getElementById('quote-dialog').showModal();
     };
   });
@@ -885,6 +936,7 @@ function openVendorDetail(vendorId){
       </div>
     </div>
     ${v.description?`<div class="vd-section"><h4>About</h4><div class="vendor-desc">${escapeHtml(v.description)}</div></div>`:''}
+    ${v.promotion?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
     <div class="vd-section">
       <div class="vendor-actions">
         ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">📞 Call</a>`:''}
@@ -913,6 +965,7 @@ function openVendorDetail(vendorId){
     quoteTargetVendorId = v.vendor_id;
     populateQuoteSportSelect();
     ['q-needed','q-details','q-budget'].forEach(id=>document.getElementById(id).value='');
+    applyRfpTemplate(quoteTargetVendorId);
     document.getElementById('quote-dialog').showModal();
   };
   document.getElementById('vendor-detail-body').querySelector('[data-review]').onclick = ()=>{
@@ -1010,6 +1063,7 @@ document.getElementById('save-vendor').onclick = async ()=>{
     email: vendorEmail,
     website_url,
     logo_image: document.getElementById('f-v-logo').value.trim(),
+    promotion: document.getElementById('f-v-promotion').value.trim() || null,
     claimed_by_vendor_id: currentProfile.user_role === 'vendor' ? currentProfile.id : null
   };
   const { error } = await supabaseClient.from('vendors').insert(row);
@@ -1017,7 +1071,7 @@ document.getElementById('save-vendor').onclick = async ()=>{
   vendors = await loadVendors();
   refreshCatFilter(); renderVendors();
   document.getElementById('vendor-dialog').close();
-  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website'].forEach(id=>document.getElementById(id).value='');
+  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion'].forEach(id=>document.getElementById(id).value='');
   resetVendorPhotoField();
   document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
   toast('Vendor listed');
@@ -1122,7 +1176,20 @@ async function renderRequests(){
           <span class="status-pill ${r.status==='open'?'open':''}">${escapeHtml(r.status)}</span>
         </div>
         <div>${escapeHtml(r.details)}</div>
+        <button data-reorder='${JSON.stringify({vendor_id:r.vendor_id, sport:r.sport||'', details:r.details, budget:r.budget||''}).replace(/'/g,"&apos;")}' style="margin-top:8px;">↻ Reorder</button>
       </div>`).join('');
+    list.querySelectorAll('[data-reorder]').forEach(btn=>{
+      btn.onclick = () => {
+        const prev = JSON.parse(btn.getAttribute('data-reorder'));
+        quoteTargetVendorId = prev.vendor_id;
+        populateQuoteSportSelect();
+        document.getElementById('q-sport').value = prev.sport;
+        document.getElementById('q-details').value = prev.details;
+        document.getElementById('q-budget').value = prev.budget;
+        document.getElementById('q-needed').value = '';
+        document.getElementById('quote-dialog').showModal();
+      };
+    });
   } else {
     // Requests directed at vendors this user owns
     const { data: myVendors } = await supabaseClient.from('vendors').select('vendor_id').eq('claimed_by_vendor_id', currentProfile.id);
