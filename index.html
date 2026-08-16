@@ -249,6 +249,7 @@
     <p class="error-text" id="auth-error"></p>
 
     <div id="signup-panel">
+      <div class="hint" style="margin-bottom:12px;">📧 After creating your account, we'll email you a confirmation link — you'll need to click it before you can sign in.</div>
       <div class="field"><label>Full Name</label><input id="su-name" placeholder="Jane Davis"></div>
       <div class="field"><label>Email</label><input id="su-email" type="email" placeholder="jane@school.edu"></div>
       <div class="field"><label>Password</label>
@@ -611,11 +612,20 @@ document.getElementById('auth-submit').onclick = async ()=>{
     return;
   }
 
-  const { error } = await supabaseClient.auth.signUp({
+  const { data: signUpData, error } = await supabaseClient.auth.signUp({
     email, password,
     options: { data: { full_name, user_role, school_or_organization } }
   });
   if(error){ showAuthError(error.message); return; }
+
+  // If Supabase requires email confirmation, there's no active session yet —
+  // don't pretend they're logged in or try to resume a pending action.
+  if(!signUpData.session){
+    document.getElementById('auth-dialog').close();
+    toast('Almost there! Check your email (' + email + ') and click the confirmation link to activate your account.');
+    return;
+  }
+
   await refreshSession();
   document.getElementById('auth-dialog').close();
   toast('Account created — welcome, ' + full_name.split(' ')[0] + '!');
@@ -1118,7 +1128,7 @@ async function renderRequests(){
     const { data: myVendors } = await supabaseClient.from('vendors').select('vendor_id').eq('claimed_by_vendor_id', currentProfile.id);
     const vendorIds = (myVendors||[]).map(v=>v.vendor_id);
     if(vendorIds.length===0){ list.innerHTML = `<div class="empty"><div class="display">You don't have any listed vendors</div>Requests to your vendor profiles will show up here.</div>`; return; }
-    const { data, error } = await supabaseClient.from('quote_requests').select('*, profiles(full_name, school_or_organization)').in('vendor_id', vendorIds).order('created_at', {ascending:false});
+    const { data, error } = await supabaseClient.from('quote_requests').select('*, profiles(full_name, school_or_organization, email)').in('vendor_id', vendorIds).order('created_at', {ascending:false});
     const rows = error ? [] : data;
     if(rows.length===0){ list.innerHTML = `<div class="empty"><div class="display">No requests yet</div>They'll show up here as coaches reach out.</div>`; return; }
     list.innerHTML = rows.map(r=>`
@@ -1128,6 +1138,7 @@ async function renderRequests(){
           <span class="status-pill ${r.status==='open'?'open':''}">${escapeHtml(r.status)}</span>
         </div>
         <div>${escapeHtml(r.details)}</div>
+        ${r.profiles && r.profiles.email ? `<div style="margin-top:6px;"><a href="mailto:${escapeHtml(r.profiles.email)}">✉️ Reply to ${escapeHtml(r.profiles.email)}</a></div>` : ''}
         ${r.status==='open' ? `<button data-closereq="${r.request_id}" style="margin-top:8px;">Mark as handled</button>` : ''}
       </div>`).join('');
     list.querySelectorAll('[data-closereq]').forEach(btn=>{
