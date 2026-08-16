@@ -1128,11 +1128,11 @@ async function renderRequests(){
           <span class="status-pill ${r.status==='open'?'open':''}">${escapeHtml(r.status)}</span>
         </div>
         <div>${escapeHtml(r.details)}</div>
-        ${r.status==='open' ? `<button data-closereq="${r.id}" style="margin-top:8px;">Mark as handled</button>` : ''}
+        ${r.status==='open' ? `<button data-closereq="${r.request_id}" style="margin-top:8px;">Mark as handled</button>` : ''}
       </div>`).join('');
     list.querySelectorAll('[data-closereq]').forEach(btn=>{
       btn.onclick = async ()=>{
-        const { error } = await supabaseClient.from('quote_requests').update({status:'closed'}).eq('id', btn.dataset.closereq);
+        const { error } = await supabaseClient.from('quote_requests').update({status:'closed'}).eq('request_id', btn.dataset.closereq);
         if(error){ toast('Could not update request: ' + error.message); return; }
         await updateRequestsBadge();
         renderRequests();
