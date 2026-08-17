@@ -8,6 +8,8 @@
 <meta property="og:title" content="Field Provisions">
 <meta property="og:description" content="The team behind your team — find vendors and request quotes for your athletic program.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://fieldprovisions.app/">
+<link rel="canonical" href="https://fieldprovisions.app/">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#C4C8CC">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,6 +49,20 @@
   main{max-width:760px; margin:0 auto; padding:18px 16px 60px;}
   .view{display:none;} .view.active{display:block;}
 
+  .how-it-works{position:relative; background:var(--card); border:1.5px solid var(--line); border-left:5px solid var(--forest);
+    border-radius:10px; padding:14px 40px 14px 16px; margin-bottom:14px;}
+  .how-it-works.hidden{display:none;}
+  .hiw-close{position:absolute; top:8px; right:10px; background:none; border:none; font-size:14px; color:var(--muted); cursor:pointer; padding:4px;}
+  .hiw-steps{display:flex; gap:18px; flex-wrap:wrap;}
+  .hiw-step{display:flex; gap:10px; align-items:flex-start; flex:1; min-width:180px;}
+  .hiw-num{flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--forest); color:#fff; font-family:'JetBrains Mono',monospace;
+    font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .hiw-title{font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:0.02em; color:var(--black);}
+  .hiw-text{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.4;}
+  .area-badge{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.04em; padding:3px 9px; border-radius:10px; background:var(--gray-light); color:var(--muted); margin-right:6px;}
+  .area-badge.nationwide{background:#E7F0E6; color:var(--forest-dark);}
+  .response-badge{font-size:11.5px; color:var(--muted); margin-top:2px;}
   .toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
   .search-wrap{position:relative; flex:1; min-width:180px;}
   .search-wrap input{width:100%; box-sizing:border-box; padding-right:32px;}
@@ -233,6 +249,14 @@
 
 <main>
   <div class="view active" id="view-vendors">
+    <div class="how-it-works" id="how-it-works">
+      <button type="button" class="hiw-close" id="hiw-close" aria-label="Dismiss">✕</button>
+      <div class="hiw-steps">
+        <div class="hiw-step"><span class="hiw-num">1</span><div><div class="hiw-title">Browse vendors</div><div class="hiw-text">Search or filter by category, service area, and sport.</div></div></div>
+        <div class="hiw-step"><span class="hiw-num">2</span><div><div class="hiw-title">Request quotes</div><div class="hiw-text">Select one or more vendors and send a quote request in a few taps.</div></div></div>
+        <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors respond directly to you &mdash; pick the best fit for your program.</div></div></div>
+      </div>
+    </div>
     <div class="toolbar">
       <div class="search-wrap">
         <input type="text" id="vendor-search" name="fp-search-9x2" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Search vendors, categories...">
@@ -240,6 +264,11 @@
       </div>
       <select id="cat-filter"><option value="">All categories</option></select>
       <select id="sport-filter"><option value="">All sports</option></select>
+      <select id="area-filter">
+        <option value="">All service areas</option>
+        <option value="nationwide">Ships / serves nationwide</option>
+        <option value="local">Local service area</option>
+      </select>
       <label class="fav-filter"><input type="checkbox" id="fav-filter-check"> ❤ Favorites only</label>
       <button class="btn forest" id="open-vendor-form">+ List a Vendor</button>
     </div>
@@ -387,6 +416,15 @@
     <div class="field"><label>Business Name</label><input id="f-v-name" placeholder="Athens Team Sports"></div>
     <div class="field"><label>Categories</label><div class="checkbox-group" id="f-v-categories"></div></div>
     <div class="field"><label>Sports Served</label><div class="checkbox-group" id="f-v-sports"></div></div>
+    <div class="field">
+      <label>Service Area</label>
+      <select id="f-v-area-type">
+        <option value="nationwide">Ships / serves nationwide</option>
+        <option value="local">Local service area only</option>
+      </select>
+      <input id="f-v-area-notes" style="margin-top:6px;" placeholder="e.g. Atlanta metro and surrounding GA counties">
+      <div class="hint">For local services (field maintenance, construction, etc.) let coaches know where you work.</div>
+    </div>
     <div class="field"><label>Description</label><textarea id="f-v-desc" placeholder="Short company bio"></textarea></div>
     <div class="row2">
       <div class="field"><label>Phone Number</label><input id="f-v-phone" placeholder="(555) 010-1234"></div>
@@ -613,6 +651,7 @@ const SPORT_OPTIONS = [
 
 let vendors = [];
 let reviews = [];
+let responseStats = {}; // vendor_id -> { avg_response_hours, response_rate }
 let quoteRequests = [];
 let currentUser = null; // Supabase auth user
 let currentProfile = null; // row from profiles table
@@ -629,6 +668,21 @@ function toast(msg){
 }
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function areaBadgeHtml(v){
+  const isNationwide = (v.service_area_type || 'nationwide') === 'nationwide';
+  const notes = (v.service_area_notes || '').trim();
+  if (isNationwide) {
+    return `<span class="area-badge nationwide">🚚 Ships nationwide</span>`;
+  }
+  return `<span class="area-badge">📍 ${escapeHtml(notes || 'Local service area')}</span>`;
+}
+function responseBadgeHtml(v){
+  const stat = responseStats[v.vendor_id];
+  if (!stat || !stat.avg_response_hours) return '';
+  const hrs = Number(stat.avg_response_hours);
+  const label = hrs < 24 ? `~${Math.round(hrs)} hr${Math.round(hrs)===1?'':'s'}` : `~${Math.round(hrs/24)} day${Math.round(hrs/24)===1?'':'s'}`;
+  return `<div class="response-badge">⏱ Typically responds in ${label}</div>`;
 }
 function initials(name){
   return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -939,6 +993,19 @@ async function loadVendors(){
   if(error){ console.error('loadVendors error:', error); toast('Could not load vendors: ' + error.message); return []; }
   return data;
 }
+async function loadResponseStats(){
+  // Reads from a public Postgres function (see SETUP.md / response-stats.sql) that
+  // aggregates quote_requests into anonymous, non-identifying per-vendor stats.
+  // Safe to no-op if the function hasn't been deployed yet — response badges just won't show.
+  if(!configured) return {};
+  try {
+    const { data, error } = await supabaseClient.rpc('get_vendor_response_stats');
+    if(error || !data) return {};
+    const byId = {};
+    data.forEach(row => { byId[row.vendor_id] = row; });
+    return byId;
+  } catch(e) { return {}; }
+}
 async function loadReviews(){
   if(!configured) return [];
   const { data, error } = await supabaseClient.from('reviews').select('*').order('created_at', {ascending:false});
@@ -975,6 +1042,7 @@ function renderVendors(){
   const q = document.getElementById('vendor-search').value.toLowerCase();
   const cat = document.getElementById('cat-filter').value;
   const sport = document.getElementById('sport-filter').value;
+  const area = document.getElementById('area-filter').value;
   const favOnly = document.getElementById('fav-filter-check').checked;
   let filtered = vendors.filter(v=>{
     const categories = v.categories || [];
@@ -982,8 +1050,9 @@ function renderVendors(){
     const matchesQ = !q || [v.business_name, categories.join(' '), v.description].join(' ').toLowerCase().includes(q);
     const matchesCat = !cat || categories.includes(cat);
     const matchesSport = !sport || sports.includes(sport) || sports.includes('All Sports');
+    const matchesArea = !area || (v.service_area_type || 'nationwide') === area;
     const matchesFav = !favOnly || favoriteIds.has(v.vendor_id);
-    return matchesQ && matchesCat && matchesSport && matchesFav;
+    return matchesQ && matchesCat && matchesSport && matchesArea && matchesFav;
   });
 
   const list = document.getElementById('vendors-list');
@@ -1035,10 +1104,12 @@ function renderVendors(){
             ${categories.map(c=>`<span class="tag-pill">${escapeHtml(c)}</span>`).join('')}
             ${sports.map(s=>`<span class="tag-pill sport">${escapeHtml(s)}</span>`).join('')}
           </div>
+          <div style="margin-top:4px;">${areaBadgeHtml(v)}</div>
           <div class="vendor-rating">
             <span class="stars">${starString(v.average_rating)}</span>
             <span>${v.total_reviews>0 ? Number(v.average_rating).toFixed(1)+' ('+v.total_reviews+' review'+(v.total_reviews===1?'':'s')+')' : 'No reviews yet'}</span>
           </div>
+          ${responseBadgeHtml(v)}
           ${v.description?`<div class="vendor-desc">${escapeHtml(v.description)}</div>`:''}
           ${v.promotion?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
           <div class="vendor-actions">
@@ -1208,10 +1279,12 @@ function openVendorDetail(vendorId){
           ${categories.map(c=>`<span class="tag-pill">${escapeHtml(c)}</span>`).join('')}
           ${sports.map(s=>`<span class="tag-pill sport">${escapeHtml(s)}</span>`).join('')}
         </div>
+        <div style="margin-top:4px;">${areaBadgeHtml(v)}</div>
         <div class="vendor-rating">
           <span class="stars">${starString(v.average_rating)}</span>
           <span>${v.total_reviews>0 ? Number(v.average_rating).toFixed(1)+' ('+v.total_reviews+' review'+(v.total_reviews===1?'':'s')+')' : 'No reviews yet'}</span>
         </div>
+        ${responseBadgeHtml(v)}
       </div>
     </div>
     ${v.description?`<div class="vd-section"><h4>About</h4><div class="vendor-desc">${escapeHtml(v.description)}</div></div>`:''}
@@ -1296,7 +1369,8 @@ document.getElementById('open-vendor-form').onclick = ()=>{
   document.getElementById('save-vendor').textContent = 'List Vendor';
   populateVendorFormCheckboxes();
   resetVendorPhotoField();
-  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion'].forEach(id=>document.getElementById(id).value='');
+  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion','f-v-area-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-v-area-type').value = 'nationwide';
   document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
   document.getElementById('vendor-dialog').showModal();
 };
@@ -1315,6 +1389,8 @@ function openVendorEditForm(vendorId){
   document.getElementById('f-v-email').value = v.email || '';
   document.getElementById('f-v-website').value = v.website_url || '';
   document.getElementById('f-v-promotion').value = v.promotion || '';
+  document.getElementById('f-v-area-type').value = v.service_area_type || 'nationwide';
+  document.getElementById('f-v-area-notes').value = v.service_area_notes || '';
   if(v.logo_image){
     document.getElementById('f-v-logo').value = v.logo_image;
     document.getElementById('f-v-logo-preview').src = v.logo_image;
@@ -1431,7 +1507,9 @@ document.getElementById('save-vendor').onclick = async ()=>{
     email: vendorEmail,
     website_url,
     logo_image: document.getElementById('f-v-logo').value.trim(),
-    promotion: document.getElementById('f-v-promotion').value.trim() || null
+    promotion: document.getElementById('f-v-promotion').value.trim() || null,
+    service_area_type: document.getElementById('f-v-area-type').value,
+    service_area_notes: document.getElementById('f-v-area-notes').value.trim() || null
   };
 
   if(editingVendorId){
@@ -1449,7 +1527,7 @@ document.getElementById('save-vendor').onclick = async ()=>{
   refreshCatFilter(); renderVendors();
   document.getElementById('vendor-dialog').close();
   editingVendorId = null;
-  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion'].forEach(id=>document.getElementById(id).value='');
+  ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion','f-v-area-notes'].forEach(id=>document.getElementById(id).value='');
   resetVendorPhotoField();
   document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
 };
@@ -1546,6 +1624,20 @@ if(document.getElementById('vendor-search').value){
 }
 document.getElementById('cat-filter').addEventListener('change', renderVendors);
 document.getElementById('sport-filter').addEventListener('change', renderVendors);
+document.getElementById('area-filter').addEventListener('change', renderVendors);
+
+// "How It Works" strip — dismissible, remembered locally per-device
+(function(){
+  const hiw = document.getElementById('how-it-works');
+  const closeBtn = document.getElementById('hiw-close');
+  try {
+    if (localStorage.getItem('fp_hiw_dismissed') === '1') hiw.classList.add('hidden');
+  } catch(e) {}
+  closeBtn.addEventListener('click', () => {
+    hiw.classList.add('hidden');
+    try { localStorage.setItem('fp_hiw_dismissed', '1'); } catch(e) {}
+  });
+})();
 
 // ============================================================
 // MY REQUESTS
@@ -1781,6 +1873,7 @@ async function renderAdminPanel(){
     await refreshSession();
     vendors = await loadVendors();
     reviews = await loadReviews();
+    responseStats = await loadResponseStats();
     refreshCatFilter();
     renderVendors();
   } catch (err) {
