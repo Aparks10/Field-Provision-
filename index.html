@@ -1345,6 +1345,7 @@ async function renderRequests(){
         <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
           <button data-reorder='${JSON.stringify({vendor_id:r.vendor_id, sport:r.sport||'', details:r.details, budget:r.budget||''}).replace(/'/g,"&apos;")}'>↻ Reorder</button>
           <button data-reviewvendor="${r.vendor_id}">⭐ Leave a review</button>
+          ${r.status!=='closed' ? `<button data-didntworkout="${r.request_id}" style="color:var(--muted);">Didn't work out</button>` : ''}
         </div>
       </div>`).join('');
     list.querySelectorAll('[data-reorder]').forEach(btn=>{
@@ -1364,6 +1365,19 @@ async function renderRequests(){
         if(!currentProfile) return;
         reviewTargetVendorId = btn.dataset.reviewvendor;
         openReviewDialog();
+      };
+    });
+    // Lets a coach quietly opt out of the review-followup email when nothing
+    // actually came of a request (never bought, went with someone else, etc).
+    // Reuses the existing 'closed' status — no new DB values needed, and
+    // send-review-followups only watches status='responded', so once this
+    // is closed it's automatically excluded from that follow-up.
+    list.querySelectorAll('[data-didntworkout]').forEach(btn=>{
+      btn.onclick = async () => {
+        if(!confirm("Mark this as didn't work out? You won't get a review reminder for it.")) return;
+        const { error } = await supabaseClient.from('quote_requests').update({status:'closed'}).eq('request_id', btn.dataset.didntworkout);
+        if(error){ toast('Could not update request: ' + error.message); return; }
+        renderRequests();
       };
     });
   } else {
