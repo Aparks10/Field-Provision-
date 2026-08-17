@@ -20,7 +20,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__supabaseLibFailed = true;"></script>
 <style>
   :root{
-    --forest:#3B5D3A; --forest-dark:#2C4A2B; --black:#1B2430; --gray:#8A8D91;
+    --forest:#3B5D3A; --forest-dark:#2C4A2B; --black:#1B2430; --gray:#8A8D91; --silver:#C4C8CC; --silver-dark:#9BA0A6;
     --gray-light:#E4E6E8; --cream:#DCDEE1; --line:#C7CBCF; --card:#FFFFFF;
     --muted:#6C7075; --gold:#B8912F;
   }
@@ -195,8 +195,9 @@
   .config-warning{background:#FFF4E5; border:1.5px solid #E8A33D; color:#7A4E00; padding:14px 18px; border-radius:8px; margin:16px; font-size:13.5px; line-height:1.5;}
   .config-warning code{background:#00000010; padding:1px 5px; border-radius:4px;}
 
-  .tagline-bar{text-align:center; padding:6px 20px 12px; background:var(--cream); font-family:'Oswald',sans-serif; font-weight:600;
-    font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--forest-dark);}
+  .tagline-bar{text-align:center; padding:9px 20px 11px; background:linear-gradient(180deg, var(--silver), #D6D9DC);
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:0.14em;
+    color:var(--forest-dark); border-bottom:1px solid var(--silver-dark); box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);}
   footer{line-height:1.7;}
   footer .footer-tagline{font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.06em; color:var(--forest-dark); font-size:11.5px; margin-bottom:4px;}
   footer .footer-links a{margin:0 6px;}
@@ -204,7 +205,7 @@
   .legal-text h4{font-family:'Oswald',sans-serif; text-transform:uppercase; font-size:13px; color:var(--forest-dark); margin:16px 0 6px;}
   .legal-text h4:first-child{margin-top:0;}
   .legal-text p{margin:0 0 10px;}
-  .status-pill.quoted{background:#FFF4E5; color:#7A4E00;}
+  .status-pill.responded{background:#FFF4E5; color:#7A4E00;}
   .status-pill.closed{background:var(--gray-light); color:var(--muted);}
 </style>
 </head>
@@ -1384,12 +1385,12 @@ async function renderRequests(){
         ${r.profiles && r.profiles.email ? `<div style="margin-top:6px;"><a href="mailto:${escapeHtml(r.profiles.email)}">✉️ Email ${escapeHtml(r.profiles.full_name||'Coach')} directly</a></div>` : ''}
         <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
           ${r.status==='open' ? `<button data-quotesent="${r.request_id}">Quote Sent / Work Initiated</button>` : ''}
-          ${r.status==='quoted' ? `<button data-closereq="${r.request_id}">Mark as Closed</button>` : ''}
+          ${r.status==='responded' ? `<button data-closereq="${r.request_id}">Mark as Closed</button>` : ''}
         </div>
       </div>`).join('');
     list.querySelectorAll('[data-quotesent]').forEach(btn=>{
       btn.onclick = async ()=>{
-        const { error } = await supabaseClient.from('quote_requests').update({status:'quoted', quoted_at: new Date().toISOString()}).eq('request_id', btn.dataset.quotesent);
+        const { error } = await supabaseClient.from('quote_requests').update({status:'responded', quoted_at: new Date().toISOString()}).eq('request_id', btn.dataset.quotesent);
         if(error){ toast('Could not update request: ' + error.message); return; }
         toast('Marked as quoted — the coach will see this in their requests');
         await updateRequestsBadge();
@@ -1501,14 +1502,14 @@ window.addEventListener('unhandledrejection', function(e){
      supabase/functions/notify-vendor-of-quote/index.ts for the current version.
 
   2. send-review-followups (Edge Function, new) -- runs on a daily schedule.
-     Finds quote_requests with status = 'quoted' and quoted_at more than 10
+     Finds quote_requests with status = 'responded' and quoted_at more than 10
      days ago that haven't been followed up on yet, and emails the coach a
      "how did it go? leave a review" link (index.html#review=VENDOR_ID, which
      this file already knows how to open -- see checkReviewDeepLink() above).
      Needs a review_requested_at column on quote_requests. See
      supabase/functions/send-review-followups/index.ts and SETUP.md.
 
-  The "Quote Sent / Work Initiated" button below sets status='quoted' and
+  The "Quote Sent / Work Initiated" button below sets status='responded' and
   quoted_at -- that's what send-review-followups watches for.
   ============================================================
 -->
