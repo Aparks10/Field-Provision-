@@ -273,7 +273,7 @@
   <div class="footer-links">
     <a id="terms-link">Terms of Service</a> ·
     <a id="privacy-link">Privacy Policy</a> ·
-    <a href="mailto:support@fieldprovisions.app">Contact</a> ·
+    <a href="mailto:Fieldprovisionsapp@gmail.com">Contact</a> ·
     <a id="admin-link">Admin</a>
   </div>
 </footer>
@@ -477,7 +477,7 @@
     <h4>10. Changes</h4>
     <p>We may update these Terms from time to time. Continued use of Field Provisions after changes means you accept the updated Terms.</p>
     <h4>11. Contact</h4>
-    <p>Questions about these Terms? Email <a href="mailto:support@fieldprovisions.app">support@fieldprovisions.app</a>.</p>
+    <p>Questions about these Terms? Email <a href="mailto:Fieldprovisionsapp@gmail.com">Fieldprovisionsapp@gmail.com</a>.</p>
   </div>
   <div class="dlg-actions"><button class="btn ghost" data-close="terms-dialog">Close</button></div>
 </dialog>
@@ -500,7 +500,7 @@
     <h4>Children's Privacy</h4>
     <p>Field Provisions is intended for coaches, athletic staff, and vendor businesses &mdash; not for use by children. We do not knowingly collect information from children under 13.</p>
     <h4>Contact</h4>
-    <p>Questions about this policy? Email <a href="mailto:support@fieldprovisions.app">support@fieldprovisions.app</a>.</p>
+    <p>Questions about this policy? Email <a href="mailto:Fieldprovisionsapp@gmail.com">Fieldprovisionsapp@gmail.com</a>.</p>
   </div>
   <div class="dlg-actions"><button class="btn ghost" data-close="privacy-dialog">Close</button></div>
 </dialog>
@@ -562,6 +562,17 @@ window.addEventListener('error', function(e){
 // server-side by Supabase Edge Functions + Resend — see supabase/functions/
 // and SETUP.md. Nothing to configure here; the app just writes to
 // quote_requests and a Database Webhook takes it from there.
+
+// ============================================================
+// MONETIZATION — Stripe Payment Link for the vendor "Pro" upgrade.
+// This is a plain checkout URL from your Stripe Dashboard (Products -> your
+// Pro product -> Create payment link), safe to hardcode since it's public.
+// Leave blank until you have one; the Upgrade button will politely no-op.
+// Whoever pays still needs their tier flipped to 'pro' — either manually in
+// the Admin Panel for now, or automatically once the Stripe webhook (see
+// supabase/functions/stripe-webhook) is deployed.
+// ============================================================
+const STRIPE_PRO_PAYMENT_LINK = '';
 
 // Fixed taxonomy — edit these lists to add/remove options across the whole app
 const CATEGORY_OPTIONS = [
@@ -1038,7 +1049,8 @@ function renderVendors(){
             <button data-review="${v.vendor_id}">Write a review</button>
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">✏️ Edit my listing</button>` : ''}
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">🗑️ Delete my listing</button>` : ''}
-            <a href="mailto:support@fieldprovisions.app?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted);">🚩 Report</a>
+            ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">⭐ Upgrade to Pro</button>` : ''}
+            <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted);">🚩 Report</a>
           </div>
           <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
           <div class="reviews-toggle" data-toggle="${v.vendor_id}">${rs.length>0 ? 'Show reviews ('+rs.length+')' : ''}</div>
@@ -1051,7 +1063,7 @@ function renderVendors(){
                 </div>
                 <div class="stars" style="font-size:11px;">${starString(r.rating)}</div>
                 <div class="review-text">${escapeHtml(r.review_text)}</div>
-                <a href="mailto:support@fieldprovisions.app?subject=${encodeURIComponent('Report review on '+v.business_name)}&body=${encodeURIComponent('Review by: '+r.author_name+'\nVendor: '+v.business_name+' ('+v.vendor_id+')\nReview text: '+r.review_text+'\n\nReason for reporting:\n')}" style="font-size:10.5px; color:var(--muted);">Report</a>
+                <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report review on '+v.business_name)}&body=${encodeURIComponent('Review by: '+r.author_name+'\nVendor: '+v.business_name+' ('+v.vendor_id+')\nReview text: '+r.review_text+'\n\nReason for reporting:\n')}" style="font-size:10.5px; color:var(--muted);">Report</a>
               </div>
             `).join('')}
           </div>
@@ -1092,6 +1104,9 @@ function applyRfpTemplate(vendorId){
   });
   list.querySelectorAll('[data-delete-my-vendor]').forEach(btn=>{
     btn.onclick = ()=>deleteMyVendorListing(btn.dataset.deleteMyVendor);
+  });
+  list.querySelectorAll('[data-upgrade-pro]').forEach(btn=>{
+    btn.onclick = ()=>openUpgradeToPro(btn.dataset.upgradePro);
   });
   list.querySelectorAll('[data-toggle]').forEach(t=>{
     if(!t.textContent) return;
@@ -1210,7 +1225,8 @@ function openVendorDetail(vendorId){
         <button data-review="${v.vendor_id}">Write a review</button>
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">✏️ Edit my listing</button>` : ''}
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">🗑️ Delete my listing</button>` : ''}
-        <a href="mailto:support@fieldprovisions.app?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted); align-self:center;">🚩 Report</a>
+        ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">⭐ Upgrade to Pro</button>` : ''}
+        <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted); align-self:center;">🚩 Report</a>
       </div>
     </div>
     <div class="vd-section">
@@ -1223,7 +1239,7 @@ function openVendorDetail(vendorId){
           </div>
           <div class="stars" style="font-size:11px;">${starString(r.rating)}</div>
           <div class="review-text">${escapeHtml(r.review_text)}</div>
-          <a href="mailto:support@fieldprovisions.app?subject=${encodeURIComponent('Report review on '+v.business_name)}&body=${encodeURIComponent('Review by: '+r.author_name+'\nVendor: '+v.business_name+' ('+v.vendor_id+')\nReview text: '+r.review_text+'\n\nReason for reporting:\n')}" style="font-size:10.5px; color:var(--muted);">Report</a>
+          <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report review on '+v.business_name)}&body=${encodeURIComponent('Review by: '+r.author_name+'\nVendor: '+v.business_name+' ('+v.vendor_id+')\nReview text: '+r.review_text+'\n\nReason for reporting:\n')}" style="font-size:10.5px; color:var(--muted);">Report</a>
         </div>`).join('')}
     </div>`;
 
@@ -1246,6 +1262,8 @@ function openVendorDetail(vendorId){
   if(detailEditBtn) detailEditBtn.onclick = ()=>openVendorEditForm(v.vendor_id);
   const detailDeleteBtn = document.getElementById('vendor-detail-body').querySelector('[data-delete-my-vendor]');
   if(detailDeleteBtn) detailDeleteBtn.onclick = ()=>deleteMyVendorListing(v.vendor_id);
+  const detailUpgradeBtn = document.getElementById('vendor-detail-body').querySelector('[data-upgrade-pro]');
+  if(detailUpgradeBtn) detailUpgradeBtn.onclick = ()=>openUpgradeToPro(v.vendor_id);
 
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v2=>v2.classList.remove('active'));
@@ -1312,6 +1330,19 @@ function openVendorEditForm(vendorId){
     if(el) el.checked = true;
   });
   document.getElementById('vendor-dialog').showModal();
+}
+
+function openUpgradeToPro(vendorId){
+  if(!STRIPE_PRO_PAYMENT_LINK){
+    toast("Pro upgrades aren't open yet — check back soon.");
+    return;
+  }
+  // client_reference_id lets the Stripe webhook match payment back to this
+  // exact listing; prefilled_email is just a convenience for checkout.
+  const url = new URL(STRIPE_PRO_PAYMENT_LINK);
+  url.searchParams.set('client_reference_id', vendorId);
+  if(currentProfile && currentProfile.email) url.searchParams.set('prefilled_email', currentProfile.email);
+  window.open(url.toString(), '_blank', 'noopener');
 }
 
 async function deleteMyVendorListing(vendorId){
