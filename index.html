@@ -431,7 +431,11 @@
       <div class="field"><label>Email</label><input id="f-v-email" type="email" placeholder="contact@vendor.com"></div>
     </div>
     <div class="field"><label>Website URL</label><input id="f-v-website" placeholder="https://vendor.com"></div>
-    <div class="field"><label>Current Promotion (optional)</label><input id="f-v-promotion" placeholder="e.g. 10% off all team apparel through September"></div>
+    <div class="field" id="f-v-promotion-field"><label>Current Promotion (optional)</label><input id="f-v-promotion" placeholder="e.g. 10% off all team apparel through September"></div>
+    <div class="field" id="f-v-promotion-locked" style="display:none;">
+      <label>Current Promotion</label>
+      <div class="hint">🔒 Promotions are a Pro feature — upgrade your listing to run a promo banner that appears here and in the promotions strip coaches see first.</div>
+    </div>
     <div class="field">
       <label>Business Photo</label>
       <input id="f-v-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
@@ -1059,7 +1063,7 @@ function renderVendors(){
 
   // Promotions strip — shows vendors with an active promotion, unaffected by filters
   const promoStrip = document.getElementById('promotions-strip');
-  const withPromos = vendors.filter(v=>v.promotion && v.promotion.trim());
+  const withPromos = vendors.filter(v=>v.account_tier==='pro' && v.promotion && v.promotion.trim());
   if(withPromos.length>0){
     promoStrip.style.display = '';
     promoStrip.innerHTML = withPromos.map(v=>`
@@ -1111,7 +1115,7 @@ function renderVendors(){
           </div>
           ${responseBadgeHtml(v)}
           ${v.description?`<div class="vendor-desc">${escapeHtml(v.description)}</div>`:''}
-          ${v.promotion?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
+          ${(v.account_tier==='pro' && v.promotion)?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
           <div class="vendor-actions">
             ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">📞 Call</a>`:''}
             ${v.email?`<a href="mailto:${escapeHtml(v.email)}">✉️ Email</a>`:''}
@@ -1288,7 +1292,7 @@ function openVendorDetail(vendorId){
       </div>
     </div>
     ${v.description?`<div class="vd-section"><h4>About</h4><div class="vendor-desc">${escapeHtml(v.description)}</div></div>`:''}
-    ${v.promotion?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
+    ${(v.account_tier==='pro' && v.promotion)?`<div class="promo-banner">🏷️ ${escapeHtml(v.promotion)}</div>`:''}
     <div class="vd-section">
       <div class="vendor-actions">
         ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">📞 Call</a>`:''}
@@ -1362,6 +1366,12 @@ document.querySelectorAll('#star-picker span').forEach(s=>{
 });
 document.getElementById('review-terms-link').onclick = ()=>document.getElementById('terms-dialog').showModal();
 
+function togglePromotionField(isPro){
+  document.getElementById('f-v-promotion-field').style.display = isPro ? '' : 'none';
+  document.getElementById('f-v-promotion-locked').style.display = isPro ? 'none' : '';
+  if (!isPro) document.getElementById('f-v-promotion').value = '';
+}
+
 document.getElementById('open-vendor-form').onclick = ()=>{
   if(!currentProfile){ pendingAction = {type:'vendor'}; toast('Sign in to list a vendor'); openAuth(); return; }
   editingVendorId = null;
@@ -1371,6 +1381,7 @@ document.getElementById('open-vendor-form').onclick = ()=>{
   resetVendorPhotoField();
   ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion','f-v-area-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-v-area-type').value = 'nationwide';
+  togglePromotionField(false); // brand-new listings always start on the free tier
   document.querySelectorAll('#f-v-categories input, #f-v-sports input').forEach(el=>el.checked=false);
   document.getElementById('vendor-dialog').showModal();
 };
@@ -1391,6 +1402,7 @@ function openVendorEditForm(vendorId){
   document.getElementById('f-v-promotion').value = v.promotion || '';
   document.getElementById('f-v-area-type').value = v.service_area_type || 'nationwide';
   document.getElementById('f-v-area-notes').value = v.service_area_notes || '';
+  togglePromotionField(v.account_tier === 'pro');
   if(v.logo_image){
     document.getElementById('f-v-logo').value = v.logo_image;
     document.getElementById('f-v-logo-preview').src = v.logo_image;
@@ -1832,7 +1844,12 @@ async function renderAdminPanel(){
   });
   body.querySelectorAll('[data-tier]').forEach(sel=>{
     sel.onchange = async ()=>{
-      await supabaseClient.from('vendors').update({account_tier: sel.value}).eq('vendor_id', sel.dataset.tier);
+      // Pro always ships with Featured placement — keep these in lockstep so a
+      // paying vendor never has to be manually flagged featured separately,
+      // and so downgrading a lapsed Pro also drops them out of Featured.
+      const isPro = sel.value === 'pro';
+      await supabaseClient.from('vendors').update({account_tier: sel.value, is_featured: isPro}).eq('vendor_id', sel.dataset.tier);
+      vendors = await loadVendors(); renderAdminPanel(); renderVendors();
       toast('Tier updated');
     };
   });
