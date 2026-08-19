@@ -39,13 +39,13 @@
   .header-tagline{text-align:left; margin-left:3px; font-family:'Oswald',sans-serif; font-weight:600;
     font-size:10.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--forest-dark);}
 
-  nav.tabs{display:flex; justify-content:center; padding:0 20px; background:var(--card); border-bottom:1.5px solid var(--line);}
-  nav.tabs .tab-track{display:flex; gap:6px; width:100%; max-width:420px;}
-  nav.tabs button{flex:1; background:none; border:none; border-bottom:3px solid transparent; padding:14px 6px 11px;
+  nav.tabs{display:flex; justify-content:center; padding:10px 20px; background:var(--card); border-bottom:1.5px solid var(--line);}
+  nav.tabs .tab-track{display:flex; gap:3px; background:var(--gray-light); border-radius:9px; padding:3px; width:100%; max-width:380px;}
+  nav.tabs button{flex:1; background:none; border:none; border-radius:6px; padding:9px 6px;
     font-family:'Oswald',sans-serif; font-weight:600; font-size:13.5px; letter-spacing:0.02em; text-transform:uppercase;
-    color:var(--muted); cursor:pointer; transition:color .15s ease, border-color .15s ease;}
-  nav.tabs button.active{color:var(--forest-dark); border-bottom-color:var(--forest);}
-  nav.tabs button:not(.active):hover{color:var(--black); border-bottom-color:var(--line);}
+    color:var(--muted); cursor:pointer; transition:background .15s ease, color .15s ease;}
+  nav.tabs button.active{color:#fff; background:var(--forest); box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+  nav.tabs button:not(.active):hover{color:var(--black);}
 
   main{max-width:760px; margin:0 auto; padding:18px 16px 60px;}
   .view{display:none;} .view.active{display:block;}
@@ -279,7 +279,7 @@
       <div class="hiw-steps">
         <div class="hiw-step"><span class="hiw-num">1</span><div><div class="hiw-title">Browse vendors</div><div class="hiw-text">Search or filter by category, service area, and sport.</div></div></div>
         <div class="hiw-step"><span class="hiw-num">2</span><div><div class="hiw-title">Request quotes</div><div class="hiw-text">Select one or more vendors and send a quote request in a few taps.</div></div></div>
-        <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors respond directly to you &mdash; pick the best fit for your program.</div></div></div>
+        <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors respond directly to you &mdash; pick the best fit for your team.</div></div></div>
       </div>
     </div>
     <div class="toolbar">
@@ -362,7 +362,7 @@
       <div class="field"><label>I am a...</label>
         <select id="su-role"><option value="coach">Coach</option><option value="vendor">Vendor</option></select>
       </div>
-      <div class="field" id="su-org-field"><label id="su-org-label">School / Organization</label><input id="su-org" placeholder="e.g. Lincoln High School"></div>
+      <div class="field" id="su-org-field"><label id="su-org-label">Team / Organization</label><input id="su-org" placeholder="e.g. Lincoln High School, Atlanta Elite AAU, FC United Club"></div>
       <div class="field"><label>Phone Number <span style="text-transform:none; font-weight:400; color:var(--gray);">(optional)</span></label><input id="su-phone" type="tel" placeholder="(555) 010-1234"></div>
     </div>
 
@@ -425,7 +425,7 @@
   <div class="dlg-head"><h3>Edit Profile</h3></div>
   <div class="dlg-body">
     <div class="field"><label>Full Name</label><input id="pf-name"></div>
-    <div class="field" id="pf-org-field"><label id="pf-org-label">School / Organization</label><input id="pf-org"></div>
+    <div class="field" id="pf-org-field"><label id="pf-org-label">Team / Organization</label><input id="pf-org"></div>
     <div class="field"><label>Phone Number <span style="text-transform:none; font-weight:400; color:var(--gray);">(optional)</span></label><input id="pf-phone" type="tel" placeholder="(555) 010-1234"></div>
   </div>
   <div class="dlg-actions">
@@ -447,8 +447,8 @@
         <option value="nationwide">Ships / serves nationwide</option>
         <option value="local">Local service area only</option>
       </select>
-      <input id="f-v-area-notes" style="margin-top:6px;" placeholder="e.g. Atlanta metro and surrounding GA counties">
-      <div class="hint">For local services (field maintenance, construction, etc.) let coaches know where you work.</div>
+      <input id="f-v-area-notes" style="margin-top:6px;" placeholder="e.g. Atlanta metro and surrounding GA counties, or 'also offers local delivery'">
+      <div class="hint">Local-only vendors: tell coaches where you work. Ship nationwide but also do local delivery? Pick "Ships nationwide" and note that here — both will show on your listing.</div>
     </div>
     <div class="field"><label>Description</label><textarea id="f-v-desc" placeholder="Short company bio"></textarea></div>
     <div class="row2">
@@ -702,7 +702,8 @@ function areaBadgeHtml(v){
   const isNationwide = (v.service_area_type || 'nationwide') === 'nationwide';
   const notes = (v.service_area_notes || '').trim();
   if (isNationwide) {
-    return `<span class="area-badge nationwide">🚚 Ships nationwide</span>`;
+    const extra = notes ? ` <span class="area-badge">📍 ${escapeHtml(notes)}</span>` : '';
+    return `<span class="area-badge nationwide">🚚 Ships nationwide</span>${extra}`;
   }
   return `<span class="area-badge">📍 ${escapeHtml(notes || 'Local service area')}</span>`;
 }
@@ -880,8 +881,8 @@ function updateOrgFieldForRole(){
     input.value = '';
   } else {
     field.style.display = '';
-    label.textContent = 'School / Organization';
-    input.placeholder = 'e.g. Lincoln High School';
+    label.textContent = 'Team / Organization';
+    input.placeholder = 'e.g. Lincoln High School, Atlanta Elite AAU, FC United Club';
   }
 }
 document.getElementById('su-role').addEventListener('change', updateOrgFieldForRole);
