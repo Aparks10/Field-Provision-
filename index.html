@@ -1814,6 +1814,19 @@ window.addEventListener('unhandledrejection', function(e){
   showBanner(`<strong>Something went wrong.</strong> Error: <code>${(e.reason && e.reason.message) || e.reason}</code>.
     Screenshot this message and send it back.`);
 });
+
+// Register the service worker so the app can be properly "installed" (home
+// screen icon, no browser address bar) and survives a brief connection
+// drop. It only caches this page's own files — never vendor data, which
+// always comes fresh from Supabase. Safe to no-op if sw.js isn't uploaded
+// yet, or on browsers that don't support service workers.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('Service worker registration failed (non-fatal):', err.message);
+    });
+  });
+}
 </script>
 
 <!--
