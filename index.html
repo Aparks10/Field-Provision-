@@ -937,7 +937,7 @@ document.getElementById('pf-save').onclick = async ()=>{
 // ============================================================
 async function loadVendors(){
   if(!configured) return [];
-  const { data, error } = await supabaseClient.from('vendors').select('*').order('is_featured', {ascending:false}).order('average_rating', {ascending:false});
+  const { data, error } = await supabaseClient.from('vendors').select('*').order('account_tier', {ascending:false}).order('is_featured', {ascending:false}).order('average_rating', {ascending:false});
   if(error){ console.error('loadVendors error:', error); toast('Could not load vendors: ' + error.message); return []; }
   return data;
 }
@@ -1025,8 +1025,8 @@ function renderVendors(){
       : `<div class="vendor-photo-banner-placeholder">${escapeHtml(initials(v.business_name))}</div>`;
     const isFav = favoriteIds.has(v.vendor_id);
     return `
-    <div class="vendor ${v.is_featured?'featured':''}">
-      ${v.is_featured?'<div class="featured-badge">Featured</div>':''}
+    <div class="vendor ${(v.is_featured || v.account_tier==='pro')?'featured':''}">
+      ${v.account_tier==='pro' ? '<div class="featured-badge">Pro</div>' : (v.is_featured?'<div class="featured-badge">Featured</div>':'')}
       <button class="fav-btn ${isFav?'active':''}" data-fav="${v.vendor_id}" title="Save to favorites">${isFav?'❤':'♡'}</button>
       ${bannerHtml}
       <div class="vendor-top">
