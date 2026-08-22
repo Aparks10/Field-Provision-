@@ -1628,8 +1628,8 @@ async function renderRequests(){
     const freeVendor = (myVendors||[]).find(v=>v.account_tier!=='pro');
     const proTeaser = freeVendor ? `
       <div class="pro-teaser">
-        <div><strong>⭐ Get more visibility with Vendor Pro</strong><br>
-        <span style="color:var(--muted); font-size:13px;">Stand out to coaches browsing ${escapeHtml(freeVendor.business_name)}'s category with featured placement.</span></div>
+        <div><strong>⭐ Get quote requests first with Vendor Pro</strong><br>
+        <span style="color:var(--muted); font-size:13px;">Pro vendors are notified the instant a coach reaches out — free listings wait 20 minutes behind them. You'll also get a gold "Pro" badge and top placement when coaches browse ${escapeHtml(freeVendor.business_name)}'s category.</span></div>
         <button data-upgrade-pro="${freeVendor.vendor_id}" style="color:var(--gold); border-color:var(--gold); white-space:nowrap;">Upgrade to Pro</button>
       </div>` : '';
     const { data, error } = await supabaseClient.from('quote_requests').select('*, profiles(full_name, school_or_organization, email)').in('vendor_id', vendorIds).order('created_at', {ascending:false});
