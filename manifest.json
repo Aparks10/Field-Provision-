@@ -34,6 +34,13 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Track quote requests"
+    },
+    {
+      "src": "screenshot-mobile-vendors.png",
+      "sizes": "295x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Browse vendors on your phone"
     }
   ],
   "shortcuts": [
