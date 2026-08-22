@@ -13,7 +13,7 @@
 //
 // Bump CACHE_NAME any time you want to force everyone's cached copy to be
 // thrown out and re-fetched (e.g. after a big index.html update).
-const CACHE_NAME = 'field-provisions-shell-v2';
+const CACHE_NAME = 'field-provisions-shell-v3';
 
 const SHELL_FILES = [
   './',
