@@ -20,6 +20,22 @@
     { "src": "icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "screenshots": [
+    {
+      "src": "screenshot-vendors.png",
+      "sizes": "1873x940",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Browse vendors for your team"
+    },
+    {
+      "src": "screenshot-requests.png",
+      "sizes": "1884x934",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Track quote requests"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Browse Vendors",
