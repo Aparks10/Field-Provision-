@@ -375,10 +375,29 @@
     <div class="field"><label>Full Name</label><input id="pf-name"></div>
     <div class="field" id="pf-org-field"><label id="pf-org-label">School / Organization</label><input id="pf-org"></div>
     <div class="field"><label>Phone Number <span style="text-transform:none; font-weight:400; color:var(--gray);">(optional)</span></label><input id="pf-phone" type="tel" placeholder="(555) 010-1234"></div>
+    <div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--line);">
+      <div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#B3261E; margin-bottom:6px;">Danger Zone</div>
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:8px;">Permanently delete your account and all associated data. This cannot be undone.</div>
+      <button type="button" class="btn ghost small" id="pf-delete-account" style="color:#B3261E; border-color:#B3261E;">Delete My Account</button>
+    </div>
   </div>
   <div class="dlg-actions">
     <button class="btn ghost" data-close="profile-dialog">Cancel</button>
     <button class="btn forest" id="pf-save">Save</button>
+  </div>
+</dialog>
+
+<!-- DELETE ACCOUNT CONFIRMATION -->
+<dialog id="delete-account-dialog">
+  <div class="dlg-head"><h3>Delete Your Account?</h3></div>
+  <div class="dlg-body">
+    <p>This permanently deletes your Field Provisions account, including your profile, reviews, favorites, and any quote requests you've sent. If you manage a vendor listing, the listing itself will stay live but will no longer be linked to your account.</p>
+    <p style="font-weight:700;">This cannot be undone.</p>
+    <div class="field"><label>Type DELETE to confirm</label><input id="da-confirm-text" placeholder="DELETE"></div>
+  </div>
+  <div class="dlg-actions">
+    <button class="btn ghost" data-close="delete-account-dialog">Cancel</button>
+    <button class="btn" id="da-confirm-btn" style="background:#B3261E; color:#fff; border-color:#B3261E;">Permanently Delete</button>
   </div>
 </dialog>
 
@@ -930,6 +949,49 @@ document.getElementById('pf-save').onclick = async ()=>{
   renderUserArea();
   document.getElementById('profile-dialog').close();
   toast('Profile updated');
+};
+
+// ============================================================
+// DELETE ACCOUNT (Apple App Store Guideline 5.1.1(v) requirement)
+// ============================================================
+document.getElementById('pf-delete-account').onclick = () => {
+  document.getElementById('da-confirm-text').value = '';
+  document.getElementById('delete-account-dialog').showModal();
+};
+document.getElementById('da-confirm-btn').onclick = async () => {
+  const typed = document.getElementById('da-confirm-text').value.trim();
+  if (typed !== 'DELETE') { toast('Type DELETE exactly to confirm'); return; }
+  const btn = document.getElementById('da-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+  try {
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (!token) { toast('You need to be signed in to delete your account'); btn.disabled = false; btn.textContent = 'Permanently Delete'; return; }
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) {
+      toast('Could not delete account: ' + (result.error || 'unknown error'));
+      btn.disabled = false;
+      btn.textContent = 'Permanently Delete';
+      return;
+    }
+    document.getElementById('delete-account-dialog').close();
+    document.getElementById('profile-dialog').close();
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    currentProfile = null;
+    toast('Your account has been deleted.');
+    location.hash = '';
+    location.reload();
+  } catch (err) {
+    toast('Could not delete account: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Permanently Delete';
+  }
 };
 
 // ============================================================
