@@ -29,12 +29,31 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
+// Every response — including error responses — needs these headers, or the
+// browser/WKWebView blocks the response entirely before our JS ever sees it
+// (shows up to the user as a generic "Load failed" / "Failed to fetch").
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 Deno.serve(async (req) => {
+  // Browsers send a preflight OPTIONS request before the real POST because
+  // this call includes an Authorization header. Without this, the browser
+  // never even sends the POST — it just fails locally with "Load failed".
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const authHeader = req.headers.get('Authorization') || '';
     const jwt = authHeader.replace('Bearer ', '');
     if (!jwt) {
-      return new Response(JSON.stringify({ error: 'Not signed in' }), { status: 401 });
+      return new Response(JSON.stringify({ error: 'Not signed in' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Verify who's calling using their own JWT against the anon client —
@@ -45,7 +64,10 @@ Deno.serve(async (req) => {
     });
     const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
     if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: 'Could not verify your account' }), { status: 401 });
+      return new Response(JSON.stringify({ error: 'Could not verify your account' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     const userId = userData.user.id;
 
@@ -61,11 +83,20 @@ Deno.serve(async (req) => {
 
     const { error: deleteUserError } = await admin.auth.admin.deleteUser(userId);
     if (deleteUserError) {
-      return new Response(JSON.stringify({ error: deleteUserError.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: deleteUserError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    return new Response(JSON.stringify({ deleted: true }), { status: 200 });
+    return new Response(JSON.stringify({ deleted: true }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
