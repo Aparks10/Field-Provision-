@@ -301,7 +301,7 @@
     <p class="error-text" id="auth-error"></p>
 
     <div id="signup-panel">
-      <div class="hint" style="margin-bottom:12px;">📧 After creating your account, we'll email you a confirmation link — you'll need to click it before you can sign in.</div>
+      <div class="hint" style="margin-bottom:12px;">📧 After creating your account, we'll email you a confirmation link — click it and you'll be signed in automatically.</div>
       <div class="field"><label>Full Name</label><input id="su-name" placeholder="Jane Davis"></div>
       <div class="field"><label>Email</label><input id="su-email" type="email" placeholder="jane@school.edu"></div>
       <div class="field"><label>Password</label>
@@ -1867,6 +1867,17 @@ async function renderAdminPanel(){
   if(!configured) return;
   try {
     await refreshSession();
+
+    // If they just landed here from clicking the "confirm your email" link,
+    // Supabase's client library already parsed the token out of the URL and
+    // established a session above (in refreshSession) — no separate sign-in
+    // step needed. This just gives a friendly confirmation of that and tidies
+    // the URL so the token isn't sitting there after the page loads.
+    if (currentUser && /type=signup/.test(location.hash)) {
+      toast('Your email is confirmed — you\'re signed in!');
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+
     vendors = await loadVendors();
     reviews = await loadReviews();
     refreshCatFilter();
