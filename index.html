@@ -605,6 +605,18 @@ window.addEventListener('error', function(e){
 // ============================================================
 const STRIPE_PRO_PAYMENT_LINK = 'https://buy.stripe.com/cNibJ12XLauI9lX33Vfw402';
 
+// ============================================================
+// iOS APP DETECTION — Apple's App Store Review Guideline 3.1.1 requires
+// in-app purchase (not an external payment link like Stripe) for any
+// digital feature unlocked from inside a native app. This app's native iOS
+// wrapper loads this page with ?platform=ios appended to the URL (set in
+// the wrapper's Xcode project) specifically so this page can tell it's
+// running inside the App Store app and hide the external "Upgrade to Pro"
+// purchase flow there. On the regular web/PWA version this flag is absent,
+// so the Stripe upgrade flow still works normally there.
+// ============================================================
+const IS_IOS_APP = new URLSearchParams(location.search).get('platform') === 'ios';
+
 // Fixed taxonomy — edit these lists to add/remove options across the whole app
 const CATEGORY_OPTIONS = [
   'Awards & Recognition', 'Athletic Footwear & Accessories', 'Team Uniforms & Apparel',
@@ -1123,7 +1135,7 @@ function renderVendors(){
             <button data-review="${v.vendor_id}">Write a review</button>
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">✏️ Edit my listing</button>` : ''}
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">🗑️ Delete my listing</button>` : ''}
-            ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">⭐ Upgrade to Pro</button>` : ''}
+            ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !IS_IOS_APP ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">⭐ Upgrade to Pro</button>` : ''}
             <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted);">🚩 Report</a>
           </div>
           <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
@@ -1299,7 +1311,7 @@ function openVendorDetail(vendorId){
         <button data-review="${v.vendor_id}">Write a review</button>
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">✏️ Edit my listing</button>` : ''}
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">🗑️ Delete my listing</button>` : ''}
-        ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">⭐ Upgrade to Pro</button>` : ''}
+        ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !IS_IOS_APP ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">⭐ Upgrade to Pro</button>` : ''}
         <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted); align-self:center;">🚩 Report</a>
       </div>
     </div>
@@ -1698,7 +1710,7 @@ async function renderRequests(){
     const vendorIds = (myVendors||[]).map(v=>v.vendor_id);
     if(vendorIds.length===0){ list.innerHTML = `<div class="empty"><div class="display">You don't have any listed vendors</div>Requests to your vendor profiles will show up here.</div>`; return; }
     const freeVendor = (myVendors||[]).find(v=>v.account_tier!=='pro');
-    const proTeaser = freeVendor ? `
+    const proTeaser = (freeVendor && !IS_IOS_APP) ? `
       <div class="pro-teaser">
         <div><strong>⭐ Get quote requests first with Vendor Pro</strong><br>
         <span style="color:var(--muted); font-size:13px;">Pro vendors are notified the instant a coach reaches out — free listings wait 20 minutes behind them. You'll also get a gold "Pro" badge and top placement when coaches browse ${escapeHtml(freeVendor.business_name)}'s category.</span></div>
