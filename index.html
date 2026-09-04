@@ -286,7 +286,7 @@
     <a id="terms-link">Terms of Service</a> ·
     <a id="privacy-link">Privacy Policy</a> ·
     <a href="mailto:Fieldprovisionsapp@gmail.com">Contact</a> ·
-    <a id="admin-link">Admin</a>
+    <a id="admin-link" style="display:none;">Admin</a>
   </div>
 </footer>
 
@@ -754,6 +754,16 @@ async function updateRequestsBadge(){
 
 function renderUserArea(){
   const area = document.getElementById('user-area');
+
+  // The footer "Admin" link should only be visible to accounts that are
+  // actually admins. Previously it showed for everyone, including signed-out
+  // visitors — anyone who clicked it just got a "not an admin" toast and
+  // nothing happened. That's a real, visible feature in the app that most
+  // people (including an App Store reviewer using the demo account) could
+  // see but never access or verify, which is worth avoiding regardless.
+  const adminLink = document.getElementById('admin-link');
+  if (adminLink) adminLink.style.display = (currentProfile && currentProfile.is_admin) ? '' : 'none';
+
   if(currentProfile){
     area.innerHTML = `
       <div class="user-chip">
