@@ -1,0 +1,26 @@
+APP REVIEW NOTES — paste into App Store Connect > App Review Information > Notes
+(Also fill in the Sign-in required fields with the demo logins below.)
+
+Field Provisions is a vendor directory for coaches and athletic staff. Coaches browse local and nationwide vendors (uniforms, equipment, awards, field care, fundraising and more) and send quote requests to one or several vendors at once. Vendors list their business and reply to coaches directly by email. The app does not process payments for goods or services, and there are no in-app purchases or subscriptions in the iOS app.
+
+DEMO ACCOUNTS (both pre-loaded with sample data)
+Coach:  demo.coach@fieldprovisions.app   Password: <YOUR PASSWORD>
+Vendor: demo.vendor@fieldprovisions.app  Password: <YOUR PASSWORD>
+
+HOW TO TEST
+1. Sign in as the Coach. The Vendors tab shows sample vendors. Search, filter by category / sport / service area, tap the heart to save a favorite, and tap a vendor name for its full page.
+2. Tap "Request a Quote" on any vendor and send a request. Open the My Requests tab > "Requests I Sent" to see sample requests in different states (open, responded, closed).
+3. Sign out and sign in as the Vendor. Open My Requests > "Requests to My Vendors" to see requests received by the vendor listing "Summit Team Outfitters". Tap "Quote Sent / Work Initiated" on an open request. Tap the pencil icon / "Edit listing" on the vendor card to edit the listing.
+4. Tap Help (top right) for a short guide to how the app works.
+
+ACCOUNT DELETION
+Signed in, tap your name (top right) > Edit profile > "Delete my account" (permanently deletes the account and its data).
+
+USER-GENERATED CONTENT (Guideline 1.2)
+- Terms of Service (linked in the app footer and at fieldprovisions.app/terms.html) prohibit objectionable content and abusive users.
+- Every vendor listing and every review has a "Report" link that sends a report to our team, and our team removes content and suspends accounts; reports are reviewed within 24 hours.
+- Contact / support: https://fieldprovisions.app/support.html
+- Privacy policy: https://fieldprovisions.app/privacy.html
+
+SIGN-IN
+The app uses email and password only (no third-party or social sign-in).
