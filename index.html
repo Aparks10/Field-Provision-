@@ -11,7 +11,7 @@
 <meta property="og:url" content="https://fieldprovisions.app/">
 <link rel="canonical" href="https://fieldprovisions.app/">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#C4C8CC">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Field Provisions">
@@ -280,57 +280,6 @@
   .guide-contact{margin-top:16px; font-size:13px; color:var(--muted);}
   .guide-contact a{color:var(--forest-dark); font-weight:600;}
 
-  /* ===== Polish pass ===== */
-  :root{ --cream:#F4F5F2; --gray-light:#EAECE8; --line:#D6D9D4; }
-  body{background:var(--cream);}
-  header{background:#fff; padding:10px 0 8px; border-bottom:4px solid var(--forest);}
-  .header-top{max-width:880px; margin:0 auto; padding:0 16px; flex-wrap:nowrap;}
-  .brand-logo{height:64px;}
-  nav.tabs{border-bottom:1px solid var(--line);}
-  main{max-width:880px; padding:22px 16px 60px;}
-
-  .hero{padding:10px 2px 18px;}
-  .hero h1{font-size:clamp(26px,4.6vw,38px); line-height:1.08; margin:0 0 8px; color:var(--black);}
-  .hero p{margin:0 0 12px; font-size:16px; line-height:1.5; color:#4a4f55; max-width:620px;}
-  .trust-row{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; font-weight:600; color:var(--forest-dark);}
-  .trust-row span::before{content:'\2713'; margin-right:6px; font-weight:700;}
-
-  .cat-chips{display:flex; gap:8px; overflow-x:auto; padding:2px 0 12px; margin:0 0 6px; scrollbar-width:none;}
-  .cat-chips::-webkit-scrollbar{display:none;}
-  .cat-chip{flex:0 0 auto; border:1.5px solid var(--line); background:#fff; color:var(--black); border-radius:999px; padding:0 15px; height:38px;
-    font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap;}
-  .cat-chip:hover{border-color:var(--forest);}
-  .cat-chip.active{background:var(--forest); border-color:var(--forest); color:#fff;}
-
-  .toolbar{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-items:center;}
-  .toolbar .search-wrap{grid-column:1/-1; min-width:0;}
-  .toolbar select{width:100%; min-width:0;}
-  .toolbar .fav-filter{grid-column:1/3;}
-  .toolbar .btn{grid-column:3; justify-self:end;}
-  @media (max-width:640px){
-    .toolbar{grid-template-columns:1fr 1fr;}
-    #cat-filter{grid-column:1/-1;}
-    .toolbar .fav-filter{grid-column:1/-1;}
-    .toolbar .btn{grid-column:1/-1; justify-self:stretch; justify-content:center;}
-    .brand-logo{height:54px;}
-  }
-
-  .how-it-works{box-shadow:none;}
-  .vendor{border-radius:14px; box-shadow:0 1px 2px rgba(27,36,48,0.05);}
-  .vendor-photo-banner-placeholder{height:54px;}
-  .vendor-photo-banner-placeholder .ph-badge{display:none;}
-  .vendor-photo-banner{height:170px;}
-
-  .vendor-cta{margin:26px 0 4px; background:var(--black); color:#fff; border-radius:14px; padding:22px 22px; display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
-  .vendor-cta strong{display:block; font-family:'Oswald',sans-serif; text-transform:uppercase; font-size:20px; letter-spacing:.02em; margin-bottom:2px;}
-  .vendor-cta span{font-size:14px; color:#C9CED4; line-height:1.45;}
-  .vendor-cta .btn{background:#fff; color:var(--black);}
-  .vendor-cta .btn:hover{background:var(--gray-light);}
-
-  footer{background:#fff; border-top:1px solid var(--line); padding:28px 20px 34px; font-size:12.5px; color:var(--muted);}
-  footer a{color:var(--muted); text-decoration:none;}
-  footer a:hover{color:var(--forest-dark); text-decoration:underline;}
-  footer .footer-links{margin-top:6px;}
 </style>
 </head>
 <body>
@@ -359,11 +308,6 @@
 
 <main>
   <div class="view active" id="view-vendors">
-    <section class="hero">
-      <h1>Find trusted vendors for your team.</h1>
-      <p>Uniforms, equipment, awards, field care and more. Request quotes from several vendors at once and compare in minutes.</p>
-      <div class="trust-row"><span>Free for coaches</span><span>Vendors reply directly to you</span><span>No payments through the app</span></div>
-    </section>
     <div class="how-it-works" id="how-it-works">
       <button type="button" class="hiw-close" id="hiw-close" aria-label="Dismiss">✕</button>
       <div class="hiw-steps">
@@ -387,13 +331,8 @@
       <label class="fav-filter"><input type="checkbox" id="fav-filter-check"> ❤ Favorites only</label>
       <button class="btn forest" id="open-vendor-form">+ List a Vendor</button>
     </div>
-    <div class="cat-chips" id="cat-chips" aria-label="Browse by category"></div>
     <div id="promotions-strip" class="promotions-strip" style="display:none;"></div>
     <div id="vendors-list"><div class="loading">Loading vendors…</div></div>
-    <div class="vendor-cta" id="vendor-cta">
-      <div><strong>Own a business that serves teams?</strong><span>List it free and start receiving quote requests from coaches.</span></div>
-      <button class="btn" id="cta-list-vendor" type="button">List your business</button>
-    </div>
   </div>
 
   <div class="view" id="view-vendor-detail">
@@ -791,6 +730,7 @@ const IS_IOS_APP = (()=>{
 })();
 if (IS_IOS_APP) document.documentElement.classList.add('ios-app');
 
+
 // Fixed taxonomy — edit these lists to add/remove options across the whole app
 const CATEGORY_OPTIONS = [
   'Awards & Recognition', 'Athletic Footwear & Accessories', 'Team Uniforms & Apparel',
@@ -910,11 +850,6 @@ document.querySelectorAll('[data-close]').forEach(b=>{
 
 // ---- footer: legal + year ----
 document.getElementById('footer-year').textContent = new Date().getFullYear();
-document.getElementById('cta-list-vendor').onclick = ()=>document.getElementById('open-vendor-form').click();
-function updateVendorCta(){
-  const el = document.getElementById('vendor-cta');
-  if(el) el.style.display = (currentProfile && currentProfile.user_role === 'vendor') ? 'none' : '';
-}
 document.getElementById('about-link').onclick = ()=>document.getElementById('about-dialog').showModal();
 document.getElementById('help-btn').onclick = ()=>document.getElementById('about-dialog').showModal();
 document.querySelectorAll('.guide-toggle button').forEach(b=>{
@@ -947,7 +882,6 @@ async function refreshSession(){
     currentProfile = null;
   }
   renderUserArea();
-  updateVendorCta();
   await loadFavorites();
   await updateRequestsBadge();
 }
@@ -1004,7 +938,6 @@ function renderUserArea(){
       await supabaseClient.auth.signOut();
       currentUser = null; currentProfile = null;
       renderUserArea();
-      updateVendorCta();
       toast('Signed out');
     };
   } else {
@@ -1279,27 +1212,6 @@ function refreshCatFilter(){
   const sportCurrent = sportSel.value;
   sportSel.innerHTML = '<option value="">All sports</option>' + SPORT_OPTIONS.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
   sportSel.value = sportCurrent;
-  renderCatChips();
-}
-
-const CHIP_LABELS = {
-  'Team Uniforms & Apparel':'Uniforms', 'Awards & Recognition':'Awards', 'Sporting Goods & Equipment':'Equipment',
-  'Field Maintenance & Turf Management':'Field Care', 'Fundraising':'Fundraising', 'Spirit Wear & Fan Gear':'Spirit Wear',
-  'Signs, Banners & Displays':'Signs & Banners', 'Strength & Conditioning':'Strength'
-};
-function renderCatChips(){
-  const wrap = document.getElementById('cat-chips');
-  if(!wrap) return;
-  const cur = document.getElementById('cat-filter').value;
-  const items = [['', 'All']].concat(Object.keys(CHIP_LABELS).filter(c=>CATEGORY_OPTIONS.includes(c)).map(c=>[c, CHIP_LABELS[c]]));
-  wrap.innerHTML = items.map(([val,label])=>`<button type="button" class="cat-chip${val===cur?' active':''}" data-cat="${escapeHtml(val)}">${escapeHtml(label)}</button>`).join('');
-  wrap.querySelectorAll('.cat-chip').forEach(b=>{
-    b.onclick = ()=>{
-      const sel = document.getElementById('cat-filter');
-      sel.value = b.dataset.cat;
-      sel.dispatchEvent(new Event('change'));
-    };
-  });
 }
 
 function populateVendorFormCheckboxes(){
@@ -1902,7 +1814,7 @@ document.getElementById('clear-search').onclick = ()=>{
 if(document.getElementById('vendor-search').value){
   document.getElementById('clear-search').style.display = '';
 }
-document.getElementById('cat-filter').addEventListener('change', ()=>{ renderVendors(); renderCatChips(); });
+document.getElementById('cat-filter').addEventListener('change', renderVendors);
 document.getElementById('sport-filter').addEventListener('change', renderVendors);
 document.getElementById('area-filter').addEventListener('change', renderVendors);
 
