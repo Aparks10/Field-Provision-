@@ -2043,7 +2043,7 @@ async function renderRequests(){
         </div>
         <div>${escapeHtml(r.details)}</div>
         <div style="margin-top:6px; font-size:11.5px; color:var(--muted);">Received ${formatDT(r.created_at)}${r.quoted_at ? ' · You sent a quote '+formatDT(r.quoted_at) : ''}</div>
-        ${r.profiles && r.profiles.email ? `<div style="margin-top:6px;"><a href="mailto:${escapeHtml(r.profiles.email)}">✉️ Email ${escapeHtml(r.profiles.full_name||'Coach')} directly</a></div>` : ''}
+        ${r.profiles && r.profiles.email ? `<div style="margin-top:6px;"><a href="mailto:${escapeHtml(r.profiles.email)}" style="display:inline-flex;align-items:center;gap:6px;color:#2f5233;font-weight:600;">${ICON.mail} Email ${escapeHtml(r.profiles.full_name||'Coach')} directly</a></div>` : ''}
         <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
           ${r.status==='open' ? `<button data-quotesent="${r.request_id}">Quote Sent / Work Initiated</button>` : ''}
           ${r.status==='responded' ? `<button data-closereq="${r.request_id}">Mark as Closed</button>` : ''}
