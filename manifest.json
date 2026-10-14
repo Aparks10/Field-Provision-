@@ -2,61 +2,52 @@
   "id": "/",
   "name": "Field Provisions",
   "short_name": "Field Provisions",
-  "description": "The team behind your team — find and request quotes from trusted vendors for your athletic program.",
+  "description": "The team behind your team \u2014 find vendors and request quotes for your school, club or AAU team.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "browser"],
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "lang": "en-US",
   "dir": "ltr",
-  "background_color": "#DCDEE1",
-  "theme_color": "#C4C8CC",
-  "categories": ["sports", "business", "shopping"],
-  "prefer_related_applications": false,
-  "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  "background_color": "#1B2430",
+  "theme_color": "#3B5D3A",
+  "categories": [
+    "business",
+    "shopping",
+    "sports"
   ],
-  "screenshots": [
+  "icons": [
     {
-      "src": "screenshot-vendors.png",
-      "sizes": "1873x940",
+      "src": "icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Browse vendors for your team"
+      "purpose": "any"
     },
     {
-      "src": "screenshot-requests.png",
-      "sizes": "1884x934",
+      "src": "icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Track quote requests"
+      "purpose": "any"
     },
     {
-      "src": "screenshot-mobile-vendors.png",
-      "sizes": "295x640",
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Browse vendors on your phone"
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
     {
       "name": "Browse Vendors",
       "short_name": "Vendors",
-      "description": "Search vendors for your team",
-      "url": "/",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "url": "/?tab=vendors",
+      "description": "Browse and search vendors"
     },
     {
-      "name": "List a Vendor",
-      "short_name": "List Vendor",
-      "description": "Add your business to Field Provisions",
-      "url": "/#list-a-vendor",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+      "name": "My Requests",
+      "short_name": "Requests",
+      "url": "/?tab=requests",
+      "description": "View your quote requests"
     }
   ]
 }
