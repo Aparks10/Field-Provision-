@@ -177,6 +177,10 @@
 
   .request-card{background:var(--card); border:1.5px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:10px; border-left:5px solid var(--forest);}
   .request-card.closed{border-left-color:var(--gray); opacity:0.7;}
+  .request-card button[data-quotesent],.request-card button[data-closereq]{font:inherit;font-weight:700;font-size:14px;padding:9px 16px;border-radius:8px;border:1.5px solid var(--forest);background:#fff;color:var(--forest);cursor:pointer;margin-top:4px;transition:background .15s,color .15s;}
+  .request-card button[data-quotesent]{background:var(--forest);color:#fff;}
+  .request-card button[data-quotesent]:hover{filter:brightness(1.1);}
+  .request-card button[data-closereq]:hover{background:var(--forest);color:#fff;}
   .request-title{font-family:'Oswald',sans-serif; font-weight:700; font-size:17px;}
   .request-meta{font-size:12px; color:var(--muted); margin:4px 0 8px;}
   .status-pill{font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; padding:2px 8px; border-radius:10px; background:var(--gray-light); color:var(--muted);}
