@@ -253,6 +253,32 @@
   .about-lead{font-size:15px; line-height:1.5; margin:0 0 6px;}
   .about-list{margin:6px 0 10px 18px; padding:0; line-height:1.55;}
   .danger-link{background:none; border:none; color:#B3181E; font:inherit; font-size:13px; text-decoration:underline; cursor:pointer; padding:6px 0;}
+
+  .header-actions{display:flex; align-items:center; gap:10px;}
+  .help-btn{display:inline-flex; align-items:center; gap:7px; height:42px; padding:0 14px 0 8px; border-radius:999px; background:#fff; border:1px solid var(--line); color:var(--black); font-family:'Oswald',sans-serif; font-size:14px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer;}
+  .help-btn:hover{border-color:var(--forest); color:var(--forest-dark);}
+  .help-q{width:26px; height:26px; border-radius:50%; background:var(--forest); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; font-family:inherit;}
+  @media (max-width:520px){ .help-label{display:none;} .help-btn{padding:0 8px; width:42px; justify-content:center;} }
+  .guide-dialog{width:min(94vw,560px);}
+  .guide-lead{font-size:15px; line-height:1.5; color:#333; margin:0 0 16px;}
+  .guide-toggle{display:flex; gap:4px; background:var(--line); padding:4px; border-radius:10px; margin-bottom:16px;}
+  .guide-toggle button{flex:1; border:none; background:none; padding:10px 8px; border-radius:7px; font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.04em; font-size:14px; color:var(--muted); cursor:pointer; min-height:42px;}
+  .guide-toggle button.active{background:var(--forest); color:#fff;}
+  .guide-steps{list-style:none; margin:0 0 6px; padding:0; display:flex; flex-direction:column; gap:12px;}
+  .guide-steps li{display:flex; gap:12px; align-items:flex-start;}
+  .gs-num{flex:none; width:30px; height:30px; border-radius:50%; background:var(--forest); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif; font-size:15px;}
+  .guide-steps strong{display:block; font-family:'Oswald',sans-serif; text-transform:uppercase; font-size:14px; letter-spacing:.03em; color:var(--black);}
+  .guide-steps span:not(.gs-num){display:block; font-size:14px; line-height:1.5; color:#444;}
+  .guide-h{font-family:'Oswald',sans-serif; text-transform:uppercase; font-size:13px; letter-spacing:.05em; color:var(--forest-dark); margin:22px 0 8px;}
+  .guide-faq{border-top:1px solid var(--line);}
+  .guide-faq:last-of-type{border-bottom:1px solid var(--line);}
+  .guide-faq summary{cursor:pointer; padding:12px 2px; font-size:14px; font-weight:600; list-style:none; display:flex; justify-content:space-between; align-items:center; min-height:44px;}
+  .guide-faq summary::-webkit-details-marker{display:none;}
+  .guide-faq summary::after{content:'+'; font-size:20px; color:var(--forest); font-weight:400;}
+  .guide-faq[open] summary::after{content:'\2212';}
+  .guide-faq p{margin:0 2px 12px; font-size:14px; line-height:1.55; color:#444;}
+  .guide-contact{margin-top:16px; font-size:13px; color:var(--muted);}
+  .guide-contact a{color:var(--forest-dark); font-weight:600;}
 </style>
 </head>
 <body>
@@ -265,7 +291,10 @@
   <picture><source srcset="logo.webp" type="image/webp"><img class="brand-logo" src="logo.png" alt="Field Provisions — The team behind your team"></picture>
   <div class="header-tagline">The Team Behind Your Team.</div>
   </div>
-  <div id="user-area"></div>
+  <div class="header-actions">
+    <button type="button" class="help-btn" id="help-btn" aria-label="Help and guide"><span class="help-q">?</span><span class="help-label">Help</span></button>
+    <div id="user-area"></div>
+  </div>
   </div>
 </header>
 
@@ -285,7 +314,6 @@
         <div class="hiw-step"><span class="hiw-num">2</span><div><div class="hiw-title">Request quotes</div><div class="hiw-text">Select one or more vendors and send a quote request in a few taps.</div></div></div>
         <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors respond directly to you &mdash; pick the best fit for your team.</div></div></div>
       </div>
-      <div style="margin-top:8px; font-size:13px;"><a href="#" id="hiw-more" style="text-decoration:underline;">New here? Read the full guide &rarr;</a></div>
     </div>
     <div class="toolbar">
       <div class="search-wrap">
@@ -529,38 +557,35 @@
 </dialog>
 
 <!-- ABOUT & HELP DIALOG -->
-<dialog id="about-dialog" style="width:min(94vw,640px);">
-  <div class="dlg-head"><h3>About &amp; Help</h3></div>
-  <div class="dlg-body legal-text">
-    <p class="about-lead"><strong>Field Provisions is a directory that connects coaches with trusted vendors</strong> &mdash; uniforms, equipment, awards, field maintenance, fundraising, signage and more &mdash; so you can request quotes from several vendors in one place instead of chasing them one at a time.</p>
+<dialog id="about-dialog" class="guide-dialog">
+  <div class="dlg-head"><h3>How Field Provisions Works</h3></div>
+  <div class="dlg-body">
+    <p class="guide-lead">One place to find trusted vendors for your team and request quotes from several at once &mdash; free for coaches.</p>
+    <div class="guide-toggle" role="tablist">
+      <button type="button" class="active" data-guide="coach" role="tab">I'm a coach</button>
+      <button type="button" data-guide="vendor" role="tab">I'm a vendor</button>
+    </div>
 
-    <h4>For coaches &amp; team staff</h4>
-    <ul class="about-list">
-      <li><strong>Browse</strong> the Vendors tab. Search, or filter by category, sport, and whether a vendor ships nationwide or serves a local area.</li>
-      <li><strong>Request a quote</strong> from one vendor, or tick the boxes on several vendors and send one request to all of them.</li>
-      <li><strong>Hear back directly.</strong> Vendors reply to you by email. Track everything under <em>My Requests</em> and mark a request &ldquo;Didn't work out&rdquo; if you go another direction.</li>
-      <li><strong>Save and review.</strong> Tap the heart to save favorites, and leave a review after you've worked with a vendor to help other coaches.</li>
-      <li>It's <strong>free for coaches</strong>.</li>
-    </ul>
+    <ol class="guide-steps" id="guide-coach">
+      <li><span class="gs-num">1</span><div><strong>Find vendors</strong><span>Search, or filter by category, sport and service area. Tap the heart to save favorites.</span></div></li>
+      <li><span class="gs-num">2</span><div><strong>Request quotes</strong><span>Tap <em>Request a Quote</em> on one vendor, or tick several and send one request to all of them.</span></div></li>
+      <li><span class="gs-num">3</span><div><strong>Compare and decide</strong><span>Vendors reply to you by email. Track every request under <em>My Requests</em>, then leave a review once you've worked together.</span></div></li>
+    </ol>
+    <ol class="guide-steps" id="guide-vendor" style="display:none;">
+      <li><span class="gs-num">1</span><div><strong>Create your listing</strong><span>Sign up as a vendor, tap <em>+ List a Vendor</em>, and add your categories, sports, service area, photo and contact info.</span></div></li>
+      <li><span class="gs-num">2</span><div><strong>Receive requests</strong><span>Quote requests arrive by email and in <em>Requests to My Vendors</em>. Tap &ldquo;Quote Sent&rdquo; once you've replied.</span></div></li>
+      <li class="no-ios-app"><span class="gs-num">3</span><div><strong>Stand out with Pro</strong><span>Pro listings appear first in search with a featured badge and can run a promotion banner at the top of the directory.</span></div></li>
+    </ol>
 
-    <h4>For vendors</h4>
-    <ul class="about-list">
-      <li><strong>Create a Vendor account</strong>, then tap <em>+ List a Vendor</em> to add your business, categories, sports served, service area, photo and contact info.</li>
-      <li><strong>Get quote requests</strong> by email and in the <em>Requests to My Vendors</em> tab. Tap &ldquo;Quote Sent / Work Initiated&rdquo; once you've replied.</li>
-      <li class="no-ios-app"><strong>Go Pro (optional).</strong> Pro listings are shown first in search results with a featured badge, and can run a promotion banner that coaches see at the top of the directory.</li>
-    </ul>
+    <h4 class="guide-h">Common questions</h4>
+    <details class="guide-faq"><summary>Does it cost anything?</summary><p>Coaches use Field Provisions free. Vendors can list for free, with optional Pro upgrades for extra visibility.</p></details>
+    <details class="guide-faq"><summary>Who handles payment and delivery?</summary><p>You and the vendor work that out directly. Field Provisions connects you but isn't part of the transaction.</p></details>
+    <details class="guide-faq"><summary>How do I report a problem?</summary><p>Use the <em>Report</em> link on any vendor or review, or email us below.</p></details>
+    <details class="guide-faq"><summary>How do I edit or delete my account?</summary><p>Open the menu under your name and choose <em>Edit profile</em>. You can permanently delete your account there.</p></details>
 
-    <h4>Good to know</h4>
-    <ul class="about-list">
-      <li>Field Provisions does not handle payment, delivery, or contracts between coaches and vendors &mdash; you work that out directly.</li>
-      <li>Something look wrong? Use the <em>Report</em> link on any vendor or review.</li>
-      <li>You can edit your profile, or permanently delete your account, from the menu under your name.</li>
-    </ul>
-
-    <h4>Need a hand?</h4>
-    <p>Email us at <a href="mailto:Fieldprovisionsapp@gmail.com">Fieldprovisionsapp@gmail.com</a> &mdash; we read every message.</p>
+    <div class="guide-contact">Still stuck? <a href="mailto:Fieldprovisionsapp@gmail.com">Fieldprovisionsapp@gmail.com</a></div>
   </div>
-  <div class="dlg-actions"><button class="btn ghost" data-close="about-dialog">Close</button></div>
+  <div class="dlg-actions"><button class="btn forest" data-close="about-dialog">Got it</button></div>
 </dialog>
 
 <!-- TERMS DIALOG -->
@@ -824,6 +849,14 @@ document.querySelectorAll('[data-close]').forEach(b=>{
 // ---- footer: legal + year ----
 document.getElementById('footer-year').textContent = new Date().getFullYear();
 document.getElementById('about-link').onclick = ()=>document.getElementById('about-dialog').showModal();
+document.getElementById('help-btn').onclick = ()=>document.getElementById('about-dialog').showModal();
+document.querySelectorAll('.guide-toggle button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.guide-toggle button').forEach(x=>x.classList.toggle('active', x===b));
+    document.getElementById('guide-coach').style.display = b.dataset.guide==='coach' ? '' : 'none';
+    document.getElementById('guide-vendor').style.display = b.dataset.guide==='vendor' ? '' : 'none';
+  };
+});
 document.getElementById('terms-link').onclick = ()=>document.getElementById('terms-dialog').showModal();
 document.getElementById('privacy-link').onclick = ()=>document.getElementById('privacy-dialog').showModal();
 
@@ -886,7 +919,6 @@ function renderUserArea(){
             <div class="ud-role">${escapeHtml(currentProfile.user_role)}</div>
           </div>
           <button type="button" id="edit-profile-btn" role="menuitem">Edit profile</button>
-          <button type="button" id="help-menu-btn" role="menuitem">About &amp; Help</button>
           <button type="button" id="signout-btn" role="menuitem">Sign out</button>
         </div>
       </div>`;
@@ -899,7 +931,6 @@ function renderUserArea(){
       chipBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     };
     document.getElementById('edit-profile-btn').onclick = ()=>{ closeMenu(); openProfileDialog(); };
-    document.getElementById('help-menu-btn').onclick = ()=>{ closeMenu(); document.getElementById('about-dialog').showModal(); };
     document.getElementById('signout-btn').onclick = async ()=>{
       closeMenu();
       await supabaseClient.auth.signOut();
@@ -1787,7 +1818,6 @@ document.getElementById('area-filter').addEventListener('change', renderVendors)
 
 // "How It Works" strip — dismissible, remembered locally per-device
 (function(){
-  document.getElementById('hiw-more').addEventListener('click', e=>{ e.preventDefault(); document.getElementById('about-dialog').showModal(); });
   const hiw = document.getElementById('how-it-works');
   const closeBtn = document.getElementById('hiw-close');
   try {
