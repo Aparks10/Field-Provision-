@@ -207,6 +207,21 @@
   .stats-upsell{margin-top:14px; padding:12px 14px; border-radius:10px; background:#faf5e6; border:1.5px solid #e6d49a; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:13.5px; color:#4b3d10;}
   .stats-upsell button{font:inherit; font-weight:700; padding:9px 16px; border-radius:8px; border:1.5px solid var(--gold); background:var(--gold); color:#fff; cursor:pointer;}
   .stats-upsell button:hover{filter:brightness(1.07);}
+  /* ---- Listing strength meter ---- */
+  .meter{height:12px; border-radius:999px; background:#e3e5e8; overflow:hidden; margin:8px 0 4px;}
+  .meter > span{display:block; height:100%; border-radius:999px; background:var(--forest); transition:width .4s;}
+  .meter.low > span{background:var(--gold);}
+  .strength-score{font-family:'Oswald',sans-serif; font-size:30px; font-weight:700; color:var(--forest); line-height:1;}
+  .strength-tips{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:6px; font-size:13.5px;}
+  .strength-tips li{display:flex; gap:8px; align-items:flex-start;}
+  .strength-tips .plus{flex:none; font-weight:800; color:var(--gold); min-width:34px;}
+  .strength-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .strength-actions button, .empty .btn-cta{font:inherit; font-weight:700; font-size:14px; padding:9px 16px; border-radius:8px; border:1.5px solid var(--forest); background:#fff; color:var(--forest); cursor:pointer; display:inline-flex; align-items:center; gap:6px;}
+  .strength-actions button.solid, .empty .btn-cta{background:var(--forest); color:#fff;}
+  .empty .btn-cta{margin-top:12px;}
+  .invite-block{border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:12px;}
+  .invite-block h4{margin:0 0 6px; font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.03em;}
+  .invite-block textarea{width:100%; min-height:92px; font:inherit; font-size:13.5px; padding:8px 10px; border:1.5px solid var(--line); border-radius:8px; resize:vertical; box-sizing:border-box;}
   .request-title{font-family:'Oswald',sans-serif; font-weight:700; font-size:17px;}
   .request-meta{font-size:12px; color:var(--muted); margin:4px 0 8px;}
   .status-pill{font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; padding:2px 8px; border-radius:10px; background:var(--gray-light); color:var(--muted);}
@@ -880,6 +895,7 @@ const ICON = {
   tag:_ico('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/>'),
   heart:_ico('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
   shield:_ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>'),
+  share:_ico('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>'),
   lock:_ico('<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
   chart:_ico('<path d="M3 3v18h18"/><path d="M7 15v3M12 9v9M17 5v13"/>'),
   heartFill:_ico('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>', true)
@@ -1078,6 +1094,7 @@ function renderUserArea(){
             <div class="ud-name">${escapeHtml(currentProfile.full_name)}</div>
             <div class="ud-role">${escapeHtml(currentProfile.user_role)}</div>
           </div>
+          <button type="button" id="invite-btn" role="menuitem">Invite a coach or vendor</button>
           <button type="button" id="edit-profile-btn" role="menuitem">Edit profile</button>
           <button type="button" id="signout-btn" role="menuitem">Sign out</button>
         </div>
@@ -1091,6 +1108,7 @@ function renderUserArea(){
       chipBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     };
     document.getElementById('edit-profile-btn').onclick = ()=>{ closeMenu(); openProfileDialog(); };
+    document.getElementById('invite-btn').onclick = ()=>{ closeMenu(); openInviteDialog(); };
     document.getElementById('signout-btn').onclick = async ()=>{
       closeMenu();
       await supabaseClient.auth.signOut();
@@ -1479,6 +1497,7 @@ function renderVendors(){
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">${ICON.edit}Edit listing</button>` : ''}
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">${ICON.trash}Delete listing</button>` : ''}
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !HIDE_PAYMENTS ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">${ICON.star}Upgrade to Pro</button>` : ''}
+            <button data-share="${v.vendor_id}">${ICON.share}Share</button>
             <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted);">${ICON.flag}Report</a>
           </div>
           <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
@@ -1659,7 +1678,8 @@ function openVendorDetail(vendorId){
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">${ICON.edit}Edit listing</button>` : ''}
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">${ICON.trash}Delete listing</button>` : ''}
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !HIDE_PAYMENTS ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">${ICON.star}Upgrade to Pro</button>` : ''}
-        <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted); align-self:center;">${ICON.flag}Report</a>
+        <button data-share="${v.vendor_id}">${ICON.share}Share</button>
+            <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted); align-self:center;">${ICON.flag}Report</a>
       </div>
     </div>
     <div class="vd-section">
@@ -1888,13 +1908,20 @@ document.getElementById('save-vendor').onclick = async ()=>{
     toast('Listing updated');
   } else {
     row.claimed_by_vendor_id = currentProfile.user_role === 'vendor' ? currentProfile.id : null;
-    const { error } = await supabaseClient.from('vendors').insert(row);
+    const ref = storedRef();
+    if(ref && ref !== currentProfile.id) row.referred_by = ref;
+    let { error } = await supabaseClient.from('vendors').insert(row);
+    if(error && row.referred_by && /referred_by/i.test(error.message || '')){   // column not added yet: save without it
+      delete row.referred_by;
+      ({ error } = await supabaseClient.from('vendors').insert(row));
+    }
     if(error){ toast('Could not save vendor: ' + error.message); return; }
     toast('Vendor listed');
   }
 
   vendors = await loadVendors();
   refreshCatFilter(); renderVendors();
+  { const rv = document.getElementById('view-requests'); if(rv && rv.classList.contains('active')) renderRequests(); }
   document.getElementById('vendor-dialog').close();
   editingVendorId = null;
   ['f-v-name','f-v-desc','f-v-phone','f-v-email','f-v-website','f-v-promotion','f-v-area-notes'].forEach(id=>document.getElementById(id).value='');
@@ -2008,6 +2035,151 @@ document.getElementById('area-filter').addEventListener('change', renderVendors)
     try { localStorage.setItem('fp_hiw_dismissed', '1'); } catch(e) {}
   });
 })();
+
+// ============================================================
+// SHARING, INVITES AND LISTING STRENGTH
+// ============================================================
+const SITE_ORIGIN = (location.protocol === 'http:' || location.protocol === 'https:') ? location.origin : 'https://fieldprovisions.app';
+// Optional: set a sentence here (for example 'Invite 3 vendors and get a free month of Pro.') and it shows in the invite window.
+const REFERRAL_REWARD_TEXT = '';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+(function captureRef(){
+  try{ const r = new URLSearchParams(location.search).get('ref'); if(r && UUID_RE.test(r)) localStorage.setItem('fp_ref', r); }catch(e){}
+})();
+function storedRef(){
+  try{ const r = localStorage.getItem('fp_ref'); return (r && UUID_RE.test(r)) ? r : null; }catch(e){ return null; }
+}
+function siteLink(params){
+  const u = new URL(SITE_ORIGIN + '/');
+  Object.entries(params||{}).forEach(([k,v])=>{ if(v) u.searchParams.set(k, v); });
+  if(currentProfile) u.searchParams.set('ref', currentProfile.id);
+  return u.toString();
+}
+async function shareOrCopy({title, text, url}){
+  try{
+    if(navigator.share){ await navigator.share({title, text, url}); return; }
+  }catch(e){ if(e && e.name === 'AbortError') return; }
+  try{ await navigator.clipboard.writeText((text ? text + ' ' : '') + url); toast('Link copied. Paste it into a text or email.'); }
+  catch(e){ window.prompt('Copy this link:', url); }
+}
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('[data-share]');
+  if(!b) return;
+  e.preventDefault();
+  const v = vendors.find(x=>x.vendor_id === b.dataset.share);
+  if(!v) return;
+  const name = fpName(v.business_name);
+  shareOrCopy({title: name + ' on Field Provisions', text: 'Take a look at ' + name + ' on Field Provisions:', url: siteLink({vendor: v.vendor_id})});
+});
+document.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('[data-open-list]')){ const b = document.getElementById('open-vendor-form'); if(b) b.click(); }
+  const ed = e.target.closest && e.target.closest('[data-meter-edit]');
+  if(ed) openVendorEditForm(ed.dataset.meterEdit);
+});
+// Opening fieldprovisions.app/?vendor=<id> (a shared link) goes straight to that vendor.
+function checkVendorDeepLink(){
+  try{
+    const id = new URLSearchParams(location.search).get('vendor');
+    if(id && UUID_RE.test(id) && vendors.some(v=>v.vendor_id === id)) openVendorDetail(id);
+  }catch(e){}
+}
+
+function listingStrength(v){
+  const has = x => !!String(x || '').trim();
+  const checks = [
+    {ok: has(v.logo_image),                          pts:20, tip:'Add a logo or photo so coaches recognize you'},
+    {ok: String(v.description||'').trim().length>=80, pts:20, tip:'Write a description of at least 80 characters about what you offer'},
+    {ok: has(v.phone_number),                        pts:10, tip:'Add a phone number so coaches can call you'},
+    {ok: has(v.email),                               pts:10, tip:'Add a contact email. Quote request alerts are sent here'},
+    {ok: has(v.website_url),                         pts:10, tip:'Add your website'},
+    {ok: (v.categories||[]).length>=1,               pts:10, tip:'Pick at least one category'},
+    {ok: (v.sports||[]).length>=1,                   pts:10, tip:'Choose the sports you serve'},
+    {ok: has(v.service_area_notes),                  pts:10, tip:'Describe where you serve or ship'}
+  ];
+  return {score: checks.reduce((n,c)=>n+(c.ok?c.pts:0), 0), missing: checks.filter(c=>!c.ok).sort((a,b)=>b.pts-a.pts)};
+}
+function buildStrengthHtml(){
+  if(!currentProfile) return '';
+  const mine = vendors.filter(v=>v.claimed_by_vendor_id === currentProfile.id);
+  if(!mine.length) return '';
+  const cards = mine.map(v=>{
+    const {score, missing} = listingStrength(v);
+    const done = score >= 100;
+    const tips = missing.slice(0,3).map(c=>`<li><span class="plus">+${c.pts}%</span><span>${escapeHtml(c.tip)}</span></li>`).join('');
+    return `
+      <div class="stats-card">
+        <div class="stats-head">
+          <div><div class="stats-title">${escapeHtml(fpName(v.business_name))}</div><div class="stats-sub">Listing strength</div></div>
+          <div class="strength-score">${score}%</div>
+        </div>
+        <div class="meter ${score<60?'low':''}" role="progressbar" aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="100"><span style="width:${score}%"></span></div>
+        ${done ? '<div class="stat-note">Your listing is complete. Complete listings get the most requests. Share it to bring in more.</div>'
+               : `<div class="stat-note">Complete listings get more quote requests. Next steps:</div><ul class="strength-tips">${tips}</ul>`}
+        <div class="strength-actions">
+          ${done ? '' : `<button class="solid" data-meter-edit="${v.vendor_id}">${ICON.edit} Edit listing</button>`}
+          <button data-share="${v.vendor_id}">${ICON.share} Share your listing</button>
+        </div>
+      </div>`;
+  }).join('');
+  return `<div class="stats-wrap">${cards}</div>`;
+}
+
+// ---- Invite window ----
+function ensureInviteDialog(){
+  let dlg = document.getElementById('invite-dialog');
+  if(dlg) return dlg;
+  dlg = document.createElement('dialog');
+  dlg.id = 'invite-dialog';
+  dlg.style.width = 'min(94vw,520px)';
+  dlg.innerHTML = `
+    <div class="dlg-head"><h3>Invite others</h3></div>
+    <div class="dlg-body">
+      <div class="hint" id="invite-reward" style="margin-bottom:10px;"></div>
+      <div class="invite-block">
+        <h4>Invite a coach</h4>
+        <textarea id="invite-coach-text" readonly></textarea>
+        <div class="strength-actions"><button class="solid" id="invite-coach-btn">${ICON.share} Share</button></div>
+      </div>
+      <div class="invite-block">
+        <h4>Invite a vendor</h4>
+        <textarea id="invite-vendor-text" readonly></textarea>
+        <div class="strength-actions"><button class="solid" id="invite-vendor-btn">${ICON.share} Share</button></div>
+      </div>
+      <div class="hint" id="invite-count"></div>
+    </div>
+    <div class="dlg-actions"><button class="btn ghost" id="invite-close">Close</button></div>`;
+  document.body.appendChild(dlg);
+  dlg.querySelector('#invite-close').onclick = ()=>dlg.close();
+  const wire = (btnId, taId, title)=>{
+    dlg.querySelector(btnId).onclick = ()=>{
+      const ta = dlg.querySelector(taId);
+      shareOrCopy({title, text: ta.value.replace(/\s*https?:\/\/\S+\s*$/, ''), url: dlg.dataset.url});
+    };
+  };
+  wire('#invite-coach-btn', '#invite-coach-text', 'Field Provisions');
+  wire('#invite-vendor-btn', '#invite-vendor-text', 'List your business on Field Provisions');
+  return dlg;
+}
+async function openInviteDialog(){
+  if(!currentProfile){ toast('Sign in to invite others'); openAuth(); return; }
+  const dlg = ensureInviteDialog();
+  const url = siteLink({});
+  dlg.dataset.url = url;
+  dlg.querySelector('#invite-coach-text').value =
+    "I've been using Field Provisions to find vendors and request quotes for our team: uniforms, equipment, awards, field care and more. It's free for coaches. " + url;
+  dlg.querySelector('#invite-vendor-text').value =
+    "Coaches are using Field Provisions to find vendors and ask for quotes. You can list your business for free here: " + url;
+  dlg.querySelector('#invite-reward').textContent = REFERRAL_REWARD_TEXT;
+  dlg.querySelector('#invite-reward').style.display = REFERRAL_REWARD_TEXT ? '' : 'none';
+  dlg.querySelector('#invite-count').textContent = '';
+  dlg.showModal();
+  try{
+    const { count, error } = await supabaseClient.from('vendors').select('vendor_id', {count:'exact', head:true}).eq('referred_by', currentProfile.id);
+    if(!error && typeof count === 'number' && count > 0)
+      dlg.querySelector('#invite-count').textContent = count + (count === 1 ? ' business has' : ' businesses have') + ' listed from your invites. Thank you!';
+  }catch(e){}
+}
 
 // ============================================================
 // IN-APP PURCHASE (iOS app v1.1+, via the native bridge)
@@ -2261,11 +2433,11 @@ async function renderRequests(){
     // Requests directed at vendors this user owns
     const { data: myVendors } = await supabaseClient.from('vendors').select('vendor_id, business_name, account_tier').eq('claimed_by_vendor_id', currentProfile.id);
     const vendorIds = (myVendors||[]).map(v=>v.vendor_id);
-    if(vendorIds.length===0){ list.innerHTML = `<div class="empty"><div class="display">You don't have any listed vendors</div>Requests to your vendor profiles will show up here.</div>`; return; }
+    if(vendorIds.length===0){ list.innerHTML = `<div class="empty"><div class="display">You don't have any listed vendors</div>Requests to your vendor profiles will show up here.<div><button class="btn-cta" data-open-list>List your business</button></div></div>`; return; }
     const { data, error } = await supabaseClient.from('quote_requests').select('*, profiles(full_name, school_or_organization, email)').in('vendor_id', vendorIds).order('created_at', {ascending:false});
     const rows = error ? [] : data;
-    const statsHtml = await buildStatsHtml(myVendors||[]);
-    if(rows.length===0){ list.innerHTML = statsHtml + `<div class="empty"><div class="display">No requests yet</div>They'll show up here as coaches reach out.</div>`; return; }
+    const statsHtml = buildStrengthHtml() + await buildStatsHtml(myVendors||[]);
+    if(rows.length===0){ list.innerHTML = statsHtml + `<div class="empty"><div class="display">No requests yet</div>They'll show up here as coaches reach out. Sharing your listing is the fastest way to get the first one.<div><button class="btn-cta" data-share="${vendorIds[0]}">${ICON.share} Share your listing</button></div></div>`; return; }
     list.innerHTML = statsHtml + rows.map(r=>`
       <div class="request-card ${r.status==='closed'?'closed':''}">
         <div class="request-title">${escapeHtml(r.profiles ? r.profiles.full_name : 'Coach')} ${r.profiles && r.profiles.school_or_organization ? '· '+escapeHtml(r.profiles.school_or_organization) : ''}</div>
@@ -2438,6 +2610,7 @@ async function renderAdminPanel(){
     responseStats = await loadResponseStats();
     refreshCatFilter();
     renderVendors();
+    checkVendorDeepLink();
   } catch (err) {
     console.error('Startup error:', err);
     showBanner(`<strong>Something went wrong loading the app.</strong> Error: <code>${(err && err.message) || err}</code>.
