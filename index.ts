@@ -22,9 +22,8 @@ function shell(title: string, body: string, footerNote: string) {
   return `<!doctype html><html><body style="margin:0;background:${BRAND.gray};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:${BRAND.ink};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.gray};padding:24px 12px;"><tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;">
-      <tr><td style="padding:20px 28px;border-bottom:4px solid ${BRAND.green};">
-        <img src="${SITE}/icon-192.png" width="40" height="40" alt="" style="vertical-align:middle;border-radius:8px;">
-        <span style="font-size:18px;font-weight:700;letter-spacing:.02em;margin-left:10px;vertical-align:middle;text-transform:uppercase;">Field Provisions</span>
+      <tr><td align="center" style="padding:22px 28px 16px;border-bottom:4px solid ${BRAND.green};">
+        <a href="${SITE}"><img src="${SITE}/email-logo.png" width="170" alt="Field Provisions" style="display:block;margin:0 auto;border:0;height:auto;max-width:170px;"></a>
       </td></tr>
       <tr><td style="padding:28px;">
         <h1 style="margin:0 0 14px;font-size:21px;line-height:1.25;">${title}</h1>
