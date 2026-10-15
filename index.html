@@ -495,6 +495,38 @@
   .vendor-select-wrap::after{content:''; flex:1;}
   .vendor-desc{display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
   .report-line{margin-top:6px; text-align:right;} .report-line a{font-size:11.5px; color:var(--muted); text-decoration:none;} .report-line a:hover{text-decoration:underline;}
+
+  /* ===== Compact pass: works well on scaled (125-150%) laptop screens ===== */
+  .promotions-strip{scrollbar-width:none; -ms-overflow-style:none; scroll-snap-type:x proximity; padding-bottom:2px; margin-bottom:18px;}
+  .promotions-strip::-webkit-scrollbar{display:none;}
+  .promotions-strip .promo-card{min-width:230px; max-width:340px; flex:0 0 auto; scroll-snap-align:start; padding:10px 14px;}
+  .promotions-strip .promo-card .promo-text{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  header{padding:8px 22px 6px;}
+  .brand-logo{height:58px;}
+  nav.tabs{padding:8px 20px;}
+  @media (min-width:980px){
+    main{max-width:800px; padding-top:18px;}
+    .how-it-works{padding:16px 44px 16px 24px; margin-bottom:14px;}
+    .hiw-mission{font-size:20px; margin-bottom:12px;}
+    .hiw-num{width:24px; height:24px; font-size:12px;}
+    .hiw-title{font-size:13px;}
+    .hiw-text{font-size:12.5px; line-height:1.4;}
+    .hiw-steps{gap:10px 20px;}
+    .toolbar{gap:9px; margin-bottom:14px;}
+    .toolbar select, .toolbar .btn, .toolbar input[type=text]{height:40px; font-size:14px;}
+    .toolbar .fav-filter{font-size:13px;}
+    .vendor-top{padding:16px 18px;}
+    .vendor-name{font-size:19px;}
+    .vendor-actions .primary{height:40px; font-size:14.5px;}
+    .vendor{margin-bottom:14px;}
+  }
+
+  /* ===== One type system: Oswald for headlines and names only; Inter for everything else ===== */
+  button, input, select, textarea{font-family:'Inter',sans-serif;}
+  .btn, .help-btn, nav.tabs button, .tabs2 button, .guide-toggle button, .hiw-title, .guide-steps strong, .guide-h, .legal-text h4, .admin-section h4, .header-tagline, footer .footer-tagline, .hiw-num, .help-q, .gs-num{font-family:'Inter',sans-serif;}
+  .btn, .help-btn, nav.tabs button, .tabs2 button, .guide-toggle button{letter-spacing:.03em; font-weight:700;}
+  .hiw-title, .guide-steps strong{font-weight:700; letter-spacing:.03em;}
+  .vd-section h4, .vendor-cat, .status-pill, .review-date, .user-chip .role-badge, .user-dropdown .ud-role, .admin-table th, .loading, .featured-badge, .mono{font-family:'Inter',sans-serif;}
 </style>
 </head>
 <body>
