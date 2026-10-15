@@ -181,6 +181,32 @@
   .request-card button[data-quotesent]{background:var(--forest);color:#fff;}
   .request-card button[data-quotesent]:hover{filter:brightness(1.1);}
   .request-card button[data-closereq]:hover{background:var(--forest);color:#fff;}
+  /* ---- Listing performance dashboard ---- */
+  .stats-wrap{margin-bottom:18px;}
+  .stats-card{background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:12px; border-top:4px solid var(--forest);}
+  .stats-card.pro{border-top-color:var(--gold);}
+  .stats-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+  .stats-title{font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; text-transform:uppercase; letter-spacing:.02em; color:var(--black);}
+  .stats-sub{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .stats-pill{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:4px 10px; border-radius:999px; background:#eef0f2; color:#4a5159;}
+  .stats-card.pro .stats-pill{background:#f6ecd0; color:#7a5a00;}
+  .stat-tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px;}
+  .stat-tile{border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; background:#fff;}
+  .stat-tile.locked{background:#f4f5f6; color:var(--muted);}
+  .stat-label{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);}
+  .stat-value{font-family:'Oswald',sans-serif; font-size:30px; font-weight:700; line-height:1.15; color:var(--forest); margin-top:2px; min-height:35px;}
+  .stat-tile.locked .stat-value{color:var(--silver-dark);}
+  .stat-tile.locked .stat-value .ico{width:22px; height:22px;}
+  .stat-hint{font-size:12px; color:var(--muted); margin-top:2px;}
+  .stat-trend{margin-top:14px;}
+  .stat-trend-label{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px;}
+  .spark{display:flex; align-items:flex-end; gap:4px; height:54px;}
+  .spark span{flex:1; background:var(--forest); border-radius:3px 3px 0 0; min-height:3px; opacity:.85;}
+  .spark span.zero{background:var(--silver); opacity:.7;}
+  .stat-note{margin-top:12px; font-size:13.5px; color:var(--black);}
+  .stats-upsell{margin-top:14px; padding:12px 14px; border-radius:10px; background:#faf5e6; border:1.5px solid #e6d49a; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:13.5px; color:#4b3d10;}
+  .stats-upsell button{font:inherit; font-weight:700; padding:9px 16px; border-radius:8px; border:1.5px solid var(--gold); background:var(--gold); color:#fff; cursor:pointer;}
+  .stats-upsell button:hover{filter:brightness(1.07);}
   .request-title{font-family:'Oswald',sans-serif; font-weight:700; font-size:17px;}
   .request-meta{font-size:12px; color:var(--muted); margin:4px 0 8px;}
   .status-pill{font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; padding:2px 8px; border-radius:10px; background:var(--gray-light); color:var(--muted);}
@@ -712,6 +738,7 @@
     <p>When you create an account, we collect your name, email, password (encrypted), role (coach or vendor), and school/organization. Vendors additionally provide business details such as phone, email, website, categories, sports served, and photos. When you request a quote or write a review, we store that content along with your profile information.</p>
     <h4>How We Use It</h4>
     <p>We use your information to operate the directory, connect Coaches and Vendors, display reviews and listings, send account-related messages (like email confirmation), and &mdash; where configured &mdash; to notify a Vendor by email when they receive a quote request (including the requesting Coach's name, school/organization, and contact email), and to confirm to the Coach that the Vendor was notified, so the two of you can connect directly.</p>
+    <p>We also keep simple, anonymous usage counts for vendor listings, such as how many times a listing was shown or opened and how many times its Call, Email or Website link was tapped. These counts are not tied to your name or account, are not used to track you across other apps or websites, and are shown to the listing owner only as totals.</p>
     <h4>What We Share</h4>
     <p>Your name, school/organization, and message contents are shared with the specific Vendor(s) you contact, and vice versa, so the two of you can communicate. Vendor listing information (business name, categories, contact info) is public within the app. We do not sell your personal information to third parties.</p>
     <h4>Data Storage</h4>
@@ -811,7 +838,25 @@ const IS_IOS_APP = (()=>{
     return inWebView;
   } catch(e) { return false; }
 })();
-if (IS_IOS_APP) document.documentElement.classList.add('ios-app');
+// Native in-app purchase bridge. The iOS app (v1.1+) registers a "fpIap" message handler that talks to
+// Apple's StoreKit through RevenueCat (see ios/IAPBridge.swift). When it is present, purchases happen
+// inside the app with Apple's payment sheet. When it is NOT present (the website, or the v1.0 iOS app),
+// the website uses Stripe and the iOS v1.0 app shows no payment UI at all.
+const NATIVE_IAP = (()=>{
+  try{
+    if (window.FP_IAP && typeof window.FP_IAP.purchasePro === 'function') return window.FP_IAP;
+    const h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.fpIap;
+    if (h && typeof h.postMessage === 'function') return {
+      get priceString(){ return window.FP_IAP_PRICE || ''; },   // the app fills this in with Apple's localized price
+      purchasePro: (vendorId)=>h.postMessage({action:'purchase', vendorId}),
+      restore:     (vendorId)=>h.postMessage({action:'restore', vendorId})
+    };
+  }catch(e){}
+  return null;
+})();
+// True only where we must not show any way to pay: the iOS app without in-app purchase.
+const HIDE_PAYMENTS = IS_IOS_APP && !NATIVE_IAP;
+if (HIDE_PAYMENTS) document.documentElement.classList.add('ios-app');
 const FP_SUPPORT_EMAIL = window.FP_SUPPORT_EMAIL || 'Fieldprovisionsapp@gmail.com';
 // Display-only: a business name typed entirely in lowercase is shown in Title Case.
 // Names with any capital letters are left exactly as the vendor wrote them.
@@ -835,6 +880,8 @@ const ICON = {
   tag:_ico('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/>'),
   heart:_ico('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
   shield:_ico('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>'),
+  lock:_ico('<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+  chart:_ico('<path d="M3 3v18h18"/><path d="M7 15v3M12 9v9M17 5v13"/>'),
   heartFill:_ico('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>', true)
 };
 
@@ -1402,7 +1449,7 @@ function renderVendors(){
       : `<div class="vendor-photo-banner-placeholder"><span class="ph-badge">${escapeHtml(initials(v.business_name))}</span></div>`;
     const isFav = favoriteIds.has(v.vendor_id);
     return `
-    <div class="vendor ${v.is_featured?'featured':''}">
+    <div class="vendor ${v.is_featured?'featured':''}" data-vid="${v.vendor_id}">
       ${v.is_featured?'<div class="featured-badge">Featured</div>':''}
       <button class="fav-btn ${isFav?'active':''}" data-fav="${v.vendor_id}" title="Save to favorites">${isFav?ICON.heartFill:ICON.heart}</button>
       ${bannerHtml}
@@ -1424,14 +1471,14 @@ function renderVendors(){
           ${v.description?`<div class="vendor-desc">${escapeHtml(v.description)}</div>`:''}
           ${(v.account_tier==='pro' && v.promotion)?`<div class="promo-banner">${ICON.tag}${escapeHtml(v.promotion)}</div>`:''}
           <div class="vendor-actions">
-            ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">${ICON.phone}Call</a>`:''}
-            ${v.email?`<a href="mailto:${escapeHtml(v.email)}">${ICON.mail}Email</a>`:''}
-            ${v.website_url?`<a href="${escapeHtml(v.website_url)}" target="_blank" rel="noopener">${ICON.link}Website</a>`:''}
+            ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}" data-track="call" data-vid="${v.vendor_id}">${ICON.phone}Call</a>`:''}
+            ${v.email?`<a href="mailto:${escapeHtml(v.email)}" data-track="email" data-vid="${v.vendor_id}">${ICON.mail}Email</a>`:''}
+            ${v.website_url?`<a href="${escapeHtml(v.website_url)}" target="_blank" rel="noopener" data-track="website" data-vid="${v.vendor_id}">${ICON.link}Website</a>`:''}
             <button class="primary" data-quote="${v.vendor_id}">Request a Quote</button>
             <button data-review="${v.vendor_id}">Write a review</button>
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">${ICON.edit}Edit listing</button>` : ''}
             ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">${ICON.trash}Delete listing</button>` : ''}
-            ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !IS_IOS_APP ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">${ICON.star}Upgrade to Pro</button>` : ''}
+            ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !HIDE_PAYMENTS ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">${ICON.star}Upgrade to Pro</button>` : ''}
             <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted);">${ICON.flag}Report</a>
           </div>
           <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
@@ -1570,6 +1617,7 @@ document.getElementById('select-bar-request').onclick = ()=>{
 function openVendorDetail(vendorId){
   const v = vendors.find(x=>x.vendor_id===vendorId);
   if(!v){ toast('Vendor not found'); return; }
+  trackEvent(v.vendor_id, 'view');
   const rs = reviewsFor(v.vendor_id);
   const categories = v.categories || [];
   const sports = v.sports || [];
@@ -1603,14 +1651,14 @@ function openVendorDetail(vendorId){
     ${(v.account_tier==='pro' && v.promotion)?`<div class="promo-banner">${ICON.tag}${escapeHtml(v.promotion)}</div>`:''}
     <div class="vd-section">
       <div class="vendor-actions">
-        ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}">${ICON.phone}Call</a>`:''}
-        ${v.email?`<a href="mailto:${escapeHtml(v.email)}">${ICON.mail}Email</a>`:''}
-        ${v.website_url?`<a href="${escapeHtml(v.website_url)}" target="_blank" rel="noopener">${ICON.link}Website</a>`:''}
+        ${v.phone_number?`<a href="tel:${escapeHtml(v.phone_number)}" data-track="call" data-vid="${v.vendor_id}">${ICON.phone}Call</a>`:''}
+        ${v.email?`<a href="mailto:${escapeHtml(v.email)}" data-track="email" data-vid="${v.vendor_id}">${ICON.mail}Email</a>`:''}
+        ${v.website_url?`<a href="${escapeHtml(v.website_url)}" target="_blank" rel="noopener" data-track="website" data-vid="${v.vendor_id}">${ICON.link}Website</a>`:''}
         <button class="primary" data-quote="${v.vendor_id}">Request a Quote</button>
         <button data-review="${v.vendor_id}">Write a review</button>
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-edit-vendor="${v.vendor_id}">${ICON.edit}Edit listing</button>` : ''}
         ${currentProfile && v.claimed_by_vendor_id === currentProfile.id ? `<button data-delete-my-vendor="${v.vendor_id}" style="color:#B3181E;">${ICON.trash}Delete listing</button>` : ''}
-        ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !IS_IOS_APP ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">${ICON.star}Upgrade to Pro</button>` : ''}
+        ${currentProfile && v.claimed_by_vendor_id === currentProfile.id && v.account_tier!=='pro' && !HIDE_PAYMENTS ? `<button data-upgrade-pro="${v.vendor_id}" style="color:var(--gold); border-color:var(--gold);">${ICON.star}Upgrade to Pro</button>` : ''}
         <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted); align-self:center;">${ICON.flag}Report</a>
       </div>
     </div>
@@ -1729,7 +1777,8 @@ function openVendorEditForm(vendorId){
 }
 
 function openUpgradeToPro(vendorId){
-  if(IS_IOS_APP) return;
+  if(HIDE_PAYMENTS) return;
+  if(NATIVE_IAP){ openIapDialog(vendorId); return; }   // in the app: Apple's in-app purchase
   if(!STRIPE_PRO_PAYMENT_LINK){
     toast("Pro upgrades aren't open yet — check back soon.");
     return;
@@ -1961,6 +2010,183 @@ document.getElementById('area-filter').addEventListener('change', renderVendors)
 })();
 
 // ============================================================
+// IN-APP PURCHASE (iOS app v1.1+, via the native bridge)
+// ============================================================
+let _iapBusy = false;
+function iapPriceText(){ return (NATIVE_IAP && NATIVE_IAP.priceString) ? NATIVE_IAP.priceString + ' per month' : 'monthly'; }
+function ensureIapDialog(){
+  let dlg = document.getElementById('iap-dialog');
+  if(dlg) return dlg;
+  dlg = document.createElement('dialog');
+  dlg.id = 'iap-dialog';
+  dlg.innerHTML = `
+    <div class="dlg-head"><h3>Field Provisions Pro</h3></div>
+    <div class="dlg-body">
+      <div style="font-weight:700; margin-bottom:6px;">Pro Vendor Plan &middot; <span id="iap-price"></span></div>
+      <ul style="margin:0 0 10px 18px; padding:0; line-height:1.5;">
+        <li>First-place search ranking and the Featured badge</li>
+        <li>Promo banner on your listing</li>
+        <li>Full listing performance dashboard</li>
+      </ul>
+      <div class="hint" style="line-height:1.5; font-size:13px; color:var(--black);">Auto-renewing monthly subscription. Payment is charged to your Apple ID at confirmation of purchase and renews automatically each month unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings &rarr; Apple ID &rarr; Subscriptions.</div>
+      <div class="hint" style="margin-top:6px;"><a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> &middot; <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></div>
+    </div>
+    <div class="dlg-actions" style="flex-wrap:wrap;">
+      <button class="btn ghost" id="iap-cancel">Not now</button>
+      <button class="btn ghost" id="iap-restore">Restore purchases</button>
+      <button class="btn forest" id="iap-buy">Subscribe</button>
+    </div>`;
+  document.body.appendChild(dlg);
+  dlg.querySelector('#iap-cancel').onclick = ()=>dlg.close();
+  dlg.querySelector('#iap-buy').onclick = ()=>startNativePurchase(dlg.dataset.vendorId, 'purchase');
+  dlg.querySelector('#iap-restore').onclick = ()=>startNativePurchase(dlg.dataset.vendorId, 'restore');
+  return dlg;
+}
+function openIapDialog(vendorId){
+  const dlg = ensureIapDialog();
+  dlg.dataset.vendorId = vendorId;
+  dlg.querySelector('#iap-price').textContent = iapPriceText();
+  dlg.showModal();
+}
+async function startNativePurchase(vendorId, action){
+  if(_iapBusy || !NATIVE_IAP || !vendorId) return;
+  _iapBusy = true;
+  const dlg = document.getElementById('iap-dialog');
+  const buttons = dlg ? [...dlg.querySelectorAll('button')] : [];
+  buttons.forEach(b=>b.disabled = true);
+  try{
+    const res = action === 'restore' ? await NATIVE_IAP.restore(vendorId) : await NATIVE_IAP.purchasePro(vendorId);
+    const status = res && res.status;
+    if(status === 'cancelled'){ return; }
+    if(status === 'success' || status === 'pending' || status === 'restored'){
+      if(dlg && dlg.open) dlg.close();
+      toast(status === 'pending' ? 'Purchase pending approval — Pro turns on once it is approved.' : 'Thank you! Activating Pro…');
+      if(status !== 'pending'){
+        const ok = await waitForPro(vendorId);
+        toast(ok ? 'Pro is now active on your listing.' : 'Your purchase went through. Pro can take a minute to appear — check back shortly.');
+      }
+    } else if(action === 'restore'){
+      toast('No previous purchase was found to restore.');
+    } else {
+      toast('The purchase did not complete.');
+    }
+  }catch(e){
+    toast('Could not complete the purchase: ' + ((e && e.message) || e));
+  }finally{
+    buttons.forEach(b=>b.disabled = false);
+    _iapBusy = false;
+  }
+}
+// The server flips the listing to Pro when Apple confirms (usually a few seconds). Poll until it does.
+async function waitForPro(vendorId){
+  for(let i=0;i<12;i++){
+    await new Promise(r=>setTimeout(r, 2500));
+    try{ vendors = await loadVendors(); }catch(e){ continue; }
+    const v = vendors.find(x=>x.vendor_id === vendorId);
+    if(v && v.account_tier === 'pro'){
+      renderVendors();
+      const rv = document.getElementById('view-requests');
+      if(rv && rv.classList.contains('active')) renderRequests();
+      return true;
+    }
+  }
+  return false;
+}
+
+// ============================================================
+// LISTING ANALYTICS — tracking + the vendor performance dashboard
+// (needs vendor-stats.sql; everything here quietly does nothing until it's run)
+// ============================================================
+const _trackedEvents = new Set();
+function trackEvent(vendorId, type){
+  try{
+    if(!configured || !vendorId) return;
+    const mine = (typeof vendors!=='undefined' && vendors) ? vendors.find(x=>x.vendor_id===vendorId) : null;
+    if(mine && currentProfile && mine.claimed_by_vendor_id === currentProfile.id) return;   // don't count owners looking at their own listing
+    const key = vendorId + ':' + type;
+    if(_trackedEvents.has(key)) return;           // once per visit, so numbers aren't inflated
+    _trackedEvents.add(key);
+    Promise.resolve(supabaseClient.rpc('track_vendor_event', {p_vendor_id: vendorId, p_type: type})).catch(()=>{});
+  }catch(e){}
+}
+document.addEventListener('click', e=>{
+  const el = e.target.closest && e.target.closest('[data-track]');
+  if(el) trackEvent(el.dataset.vid, el.dataset.track);
+}, true);
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('[data-stats-upgrade]');
+  if(b) openUpgradeToPro(b.dataset.statsUpgrade);
+});
+// "Appeared in search": counted once per visit when a card is at least half on screen.
+const _impressionIO = ('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){ trackEvent(en.target.dataset.vid, 'impression'); _impressionIO.unobserve(en.target); }
+  });
+}, {threshold:0.5}) : null;
+function observeVendorCards(){
+  if(!_impressionIO) return;
+  document.querySelectorAll('#vendors-list .vendor[data-vid]').forEach(el=>_impressionIO.observe(el));
+}
+try{ new MutationObserver(observeVendorCards).observe(document.getElementById('vendors-list'), {childList:true}); }catch(e){}
+
+function statsCardHtml(v, s){
+  const pro = !!s.is_pro;
+  const num = n => Number(n||0).toLocaleString();
+  const open = (label, value, hint)=>
+    `<div class="stat-tile"><div class="stat-label">${label}</div><div class="stat-value">${num(value)}</div><div class="stat-hint">${hint}</div></div>`;
+  // Locked tiles are hidden entirely inside the iOS app (no purchase path there).
+  const locked = (label)=>
+    `<div class="stat-tile locked no-ios-app"><div class="stat-label">${label}</div><div class="stat-value">${ICON.lock}</div><div class="stat-hint">Pro feature</div></div>`;
+
+  const tiles = [
+    pro ? open('Appeared in search', s.impressions, 'times coaches saw your listing') : locked('Appeared in search'),
+    open('Profile views', s.views, 'opened your full profile'),
+    pro ? open('Contacts', s.contacts, `${num(s.calls)} calls · ${num(s.emails)} emails · ${num(s.websites)} site`) : locked('Contacts'),
+    open('Quote requests', s.requests, 'sent to you')
+  ].join('');
+
+  let extra = '';
+  if(pro){
+    const series = Array.isArray(s.series) ? s.series : [];
+    const max = Math.max(1, ...series);
+    const bars = series.map(n=>`<span class="${n?'':'zero'}" style="height:${Math.max(6, Math.round(n/max*100))}%" title="${n}"></span>`).join('');
+    const rate = s.requests>0 ? Math.round((s.responded||0)/s.requests*100) : null;
+    extra = `
+      <div class="stat-trend"><div class="stat-trend-label">Daily activity · last 14 days</div><div class="spark">${bars}</div></div>
+      <div class="stat-note">${rate===null ? 'No quote requests yet this period. Fast replies win business — keep your phone and email handy.'
+        : `You've replied to <strong>${num(s.responded)}</strong> of <strong>${num(s.requests)}</strong> quote request${s.requests===1?'':'s'} (${rate}%). Vendors who reply within a day win the most work.`}</div>`;
+  } else {
+    extra = `
+      <div class="stats-upsell no-ios-app">
+        <div><strong>See how coaches find you.</strong> Pro adds search appearances, calls, emails and website clicks, a 14-day trend, a promo banner, and first-place search ranking${NATIVE_IAP ? (NATIVE_IAP.priceString ? ' &mdash; ' + escapeHtml(NATIVE_IAP.priceString) + ' per month' : '') : ' &mdash; $9.99/month'}.</div>
+        <button data-stats-upgrade="${v.vendor_id}">Upgrade to Pro</button>
+      </div>`;
+  }
+  return `
+    <div class="stats-card ${pro?'pro':''}">
+      <div class="stats-head">
+        <div><div class="stats-title">${ICON.chart} ${escapeHtml(fpName(v.business_name))}</div><div class="stats-sub">Listing performance &middot; last ${s.days||30} days</div></div>
+        <span class="stats-pill">${pro?'Pro':'Free'}</span>
+      </div>
+      <div class="stat-tiles">${tiles}</div>
+      ${extra}
+    </div>`;
+}
+async function buildStatsHtml(myVendors){
+  if(!configured || !myVendors || !myVendors.length) return '';
+  if(HIDE_PAYMENTS) return '';   // v1.0 iOS app: vendor Pro tools are web-only until in-app purchase ships
+  const blocks = await Promise.all(myVendors.map(async v=>{
+    try{
+      const { data, error } = await supabaseClient.rpc('vendor_stats', {p_vendor_id: v.vendor_id, p_days: 30});
+      if(error || !data) return '';
+      return statsCardHtml(v, data);
+    }catch(e){ return ''; }
+  }));
+  const html = blocks.join('');
+  return html ? `<div class="stats-wrap">${html}</div>` : '';
+}
+
+// ============================================================
 // MY REQUESTS
 // ============================================================
 let reqTab = 'sent';
@@ -2033,13 +2259,14 @@ async function renderRequests(){
     });
   } else {
     // Requests directed at vendors this user owns
-    const { data: myVendors } = await supabaseClient.from('vendors').select('vendor_id').eq('claimed_by_vendor_id', currentProfile.id);
+    const { data: myVendors } = await supabaseClient.from('vendors').select('vendor_id, business_name, account_tier').eq('claimed_by_vendor_id', currentProfile.id);
     const vendorIds = (myVendors||[]).map(v=>v.vendor_id);
     if(vendorIds.length===0){ list.innerHTML = `<div class="empty"><div class="display">You don't have any listed vendors</div>Requests to your vendor profiles will show up here.</div>`; return; }
     const { data, error } = await supabaseClient.from('quote_requests').select('*, profiles(full_name, school_or_organization, email)').in('vendor_id', vendorIds).order('created_at', {ascending:false});
     const rows = error ? [] : data;
-    if(rows.length===0){ list.innerHTML = `<div class="empty"><div class="display">No requests yet</div>They'll show up here as coaches reach out.</div>`; return; }
-    list.innerHTML = rows.map(r=>`
+    const statsHtml = await buildStatsHtml(myVendors||[]);
+    if(rows.length===0){ list.innerHTML = statsHtml + `<div class="empty"><div class="display">No requests yet</div>They'll show up here as coaches reach out.</div>`; return; }
+    list.innerHTML = statsHtml + rows.map(r=>`
       <div class="request-card ${r.status==='closed'?'closed':''}">
         <div class="request-title">${escapeHtml(r.profiles ? r.profiles.full_name : 'Coach')} ${r.profiles && r.profiles.school_or_organization ? '· '+escapeHtml(r.profiles.school_or_organization) : ''}</div>
         <div class="request-meta">${escapeHtml(r.sport||'')} ${r.needed_by ? '· needed by '+r.needed_by : ''} ${r.budget ? '· $'+r.budget : ''}
