@@ -412,6 +412,89 @@
   .hiw-step:not(:last-child)::after{top:13px; left:36px;}
   .hiw-title{font-size:14px;}
   .hiw-text{font-size:13px; line-height:1.4; margin-top:0;}
+
+  /* ===== Layout polish: compact mission banner + tidy filter rows ===== */
+  .how-it-works{padding:14px 44px 14px 20px; margin-bottom:14px;}
+  .hiw-mission{font-size:15px; font-weight:600; line-height:1.4; padding:0; margin:0 0 12px; border-bottom:none;}
+  .hiw-steps{display:grid; grid-template-columns:repeat(3,1fr); gap:10px 22px;}
+  .hiw-step{flex-direction:row; align-items:flex-start; gap:10px; position:relative; min-width:0;}
+  .hiw-step::after, .hiw-step:not(:last-child)::after{display:none;}
+  .hiw-num{width:24px; height:24px; font-size:12px; margin:1px 0 0;}
+  .hiw-title{font-size:13px;}
+  .hiw-text{font-size:12.5px; line-height:1.35;}
+  .hiw-close{top:8px; right:8px;}
+  .toolbar{grid-template-columns:repeat(12,1fr); gap:10px; margin-bottom:16px;}
+  .toolbar .search-wrap{grid-column:1/-1;}
+  .toolbar #cat-filter{grid-column:1/5;}
+  .toolbar #sport-filter{grid-column:5/9;}
+  .toolbar #area-filter{grid-column:9/13;}
+  .toolbar .sort-select{grid-column:1/5; grid-row:3;}
+  .toolbar .fav-filter{grid-column:5/9; grid-row:3; padding-left:4px;}
+  .toolbar #open-vendor-form{grid-column:9/13; grid-row:3; justify-self:stretch; justify-content:center;}
+  @media (max-width:640px){
+    .how-it-works{padding:12px 40px 12px 14px;}
+    .hiw-mission{font-size:14.5px; margin-bottom:10px;}
+    .hiw-steps{grid-template-columns:1fr; gap:8px;}
+    .hiw-text{display:inline;}
+    .toolbar{grid-template-columns:1fr 1fr; gap:8px;}
+    .toolbar select{font-size:14px; padding-left:10px; padding-right:24px;}
+    .toolbar .search-wrap{grid-column:1/-1; grid-row:1;}
+    .toolbar #cat-filter{grid-column:1/-1; grid-row:2;}
+    .toolbar #sport-filter{grid-column:1; grid-row:3;}
+    .toolbar #area-filter{grid-column:2; grid-row:3;}
+    .toolbar .sort-select{grid-column:1; grid-row:4; flex:none;}
+    .toolbar .fav-filter{grid-column:2; grid-row:4; justify-self:start; padding-left:6px;}
+    .toolbar #open-vendor-form{grid-column:1/-1; grid-row:5;}
+    .toolbar select{width:100%; flex:none;}
+  }
+
+  /* ===== Layout polish 2: clearer hierarchy, roomier banner ===== */
+  .how-it-works{padding:20px 48px 20px 24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(27,36,48,.06);}
+  .hiw-mission{font-family:'Oswald',sans-serif; font-size:21px; font-weight:600; letter-spacing:.01em; line-height:1.25; color:var(--black); margin:0 0 16px; text-wrap:balance;}
+  .hiw-steps{gap:14px 28px;}
+  .hiw-num{width:28px; height:28px; font-size:13px;}
+  .hiw-title{font-size:14px; letter-spacing:.03em;}
+  .hiw-text{font-size:13.5px; line-height:1.45; margin-top:2px;}
+  .toolbar{gap:12px; margin-bottom:20px;}
+  .toolbar .fav-filter{font-size:13.5px;}
+  .hiw-title{white-space:nowrap;}
+  @media (max-width:640px){
+    .how-it-works{padding:16px 40px 16px 16px; margin-bottom:16px;}
+    .hiw-mission{font-size:18px; margin-bottom:12px;}
+    .hiw-steps{gap:12px;}
+    .hiw-text{font-size:13px;}
+    .toolbar{gap:10px;}
+  }
+
+  /* ===== Design pass 3: wider desktop, two-column cards, calmer card actions, compact header ===== */
+  header{padding:10px 24px 8px;}
+  .brand-logo{height:72px;}
+  @media (max-width:520px){ .brand-logo{height:54px;} header{padding:8px 14px 6px;} .header-tagline{font-size:9.5px;} }
+  @media (min-width:980px){
+    main{max-width:860px; padding-top:26px;}
+    .toolbar #cat-filter{grid-column:1/4;} .toolbar #sport-filter{grid-column:4/7;} .toolbar #area-filter{grid-column:7/10;}
+    .toolbar{grid-template-columns:repeat(12,1fr);}
+    .toolbar .search-wrap{grid-column:1/8; grid-row:1;}
+    .toolbar #open-vendor-form{grid-column:10/13; grid-row:1; justify-self:stretch;}
+    .toolbar #cat-filter,.toolbar #sport-filter,.toolbar #area-filter{grid-row:2;}
+    .toolbar .sort-select{grid-column:10/13; grid-row:2;}
+    .toolbar .fav-filter{grid-column:8/10; grid-row:1; padding-left:6px; justify-content:center;}
+    .how-it-works{padding:24px 56px 24px 30px;}
+    .hiw-mission{font-size:25px;}
+  }
+  .vendor{transition:box-shadow .18s ease, transform .18s ease, border-color .18s ease;}
+  @media (hover:hover){ .vendor:hover{transform:translateY(-2px); box-shadow:0 2px 4px rgba(23,32,42,.06), 0 18px 32px -16px rgba(23,32,42,.28); border-color:#C9CDD1;} }
+  .vendor-top{padding:20px;}
+  .vendor-name{font-size:21px; line-height:1.2;}
+  .vendor-actions{gap:6px 4px; margin-top:16px;}
+  .vendor-actions .primary{order:-1; flex:1 1 100%; justify-content:center; height:44px; margin-bottom:8px; font-size:15px; letter-spacing:.01em;}
+  .vendor-actions a:not([href*="subject=Report"]), .vendor-actions button:not(.primary){background:none; border:none; color:var(--forest-dark); height:34px; padding:0 10px; font-weight:600; font-size:13.5px; border-radius:8px;}
+  .vendor-actions a:not([href*="subject=Report"]):hover, .vendor-actions button:not(.primary):hover{background:#EDF2EC;}
+  .vendor-actions a[href*="subject=Report"]{display:none;}
+  .vendor-select-wrap{margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:12.5px;}
+  .vendor-select-wrap::after{content:''; flex:1;}
+  .vendor-desc{display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .report-line{margin-top:6px; text-align:right;} .report-line a{font-size:11.5px; color:var(--muted); text-decoration:none;} .report-line a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -442,11 +525,11 @@
   <div class="view active" id="view-vendors">
     <div class="how-it-works" id="how-it-works">
       <button type="button" class="hiw-close" id="hiw-close" aria-label="Dismiss">✕</button>
-      <div class="hiw-mission">Helping coaches find the right vendors for their teams, and helping vendors find the teams that need them.</div>
+      <div class="hiw-mission">Helping coaches find the right vendors, and helping vendors find the teams that need them.</div>
       <div class="hiw-steps">
-        <div class="hiw-step"><span class="hiw-num">1</span><div><div class="hiw-title">Browse vendors</div><div class="hiw-text">Search or filter by category, service area, and sport.</div></div></div>
-        <div class="hiw-step"><span class="hiw-num">2</span><div><div class="hiw-title">Request quotes</div><div class="hiw-text">Select one or more vendors and send a quote request in a few taps.</div></div></div>
-        <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors respond directly to you &mdash; pick the best fit for your team.</div></div></div>
+        <div class="hiw-step"><span class="hiw-num">1</span><div><div class="hiw-title">Browse vendors</div><div class="hiw-text">Filter by category, sport and service area.</div></div></div>
+        <div class="hiw-step"><span class="hiw-num">2</span><div><div class="hiw-title">Request quotes</div><div class="hiw-text">Pick one or more vendors and send a request in a few taps.</div></div></div>
+        <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors reply to you directly. Choose the best fit.</div></div></div>
       </div>
     </div>
     <div class="toolbar">
@@ -463,7 +546,7 @@
       </select>
       <label class="fav-filter"><input type="checkbox" id="fav-filter-check"> <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="color:#B3362B"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Favorites only</label>
       <select id="sort-select" class="sort-select" aria-label="Sort vendors">
-        <option value="">Sort: Recommended</option>
+        <option value="">Sort: Best match</option>
         <option value="rating">Sort: Top rated</option>
         <option value="reviews">Sort: Most reviewed</option>
         <option value="name">Sort: A to Z</option>
@@ -1527,6 +1610,7 @@ function renderVendors(){
             <a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}" style="color:var(--muted);">${ICON.flag}Report</a>
           </div>
           <label class="vendor-select-wrap"><input type="checkbox" data-select="${v.vendor_id}" ${selectedVendorIds.has(v.vendor_id)?'checked':''}> Select to include in a group quote request</label>
+          <div class="report-line"><a href="mailto:Fieldprovisionsapp@gmail.com?subject=${encodeURIComponent('Report vendor: '+v.business_name)}&body=${encodeURIComponent('Vendor: '+v.business_name+' ('+v.vendor_id+')\n\nReason for reporting:\n')}">Report this listing</a></div>
           <div class="reviews-toggle" data-toggle="${v.vendor_id}">${rs.length>0 ? 'Show reviews ('+rs.length+')' : ''}</div>
           <div class="reviews-panel" id="panel-${v.vendor_id}">
             ${rs.map(r=>`
