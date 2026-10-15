@@ -215,6 +215,13 @@
   .strength-tips{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:6px; font-size:13.5px;}
   .strength-tips li{display:flex; gap:8px; align-items:flex-start;}
   .strength-tips .plus{flex:none; font-weight:800; color:var(--gold); min-width:34px;}
+  .plan-opt{display:grid; grid-template-columns:1fr auto; gap:2px 12px; width:100%; text-align:left; font:inherit; background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; cursor:pointer;}
+  .plan-opt:hover{border-color:var(--forest);}
+  .plan-opt[data-plan="annual"]{border-color:var(--forest); background:#f3f7f3;}
+  .plan-name{font-weight:800; display:flex; align-items:center; gap:8px;}
+  .plan-badge{font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; background:var(--gold); color:#fff; padding:2px 8px; border-radius:999px;}
+  .plan-price{font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; color:var(--forest); grid-row:1; grid-column:2;}
+  .plan-note{font-size:12.5px; color:var(--muted); grid-column:1/-1;}
   .strength-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
   .strength-actions button, .empty .btn-cta{font:inherit; font-weight:700; font-size:14px; padding:9px 16px; border-radius:8px; border:1.5px solid var(--forest); background:#fff; color:var(--forest); cursor:pointer; display:inline-flex; align-items:center; gap:6px;}
   .strength-actions button.solid, .empty .btn-cta{background:var(--forest); color:#fff;}
@@ -387,11 +394,13 @@
   .toolbar{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-items:center; margin-bottom:16px;}
   .toolbar .search-wrap{grid-column:1/-1; min-width:0;}
   .toolbar select{width:100%; min-width:0; flex:none;}
-  .toolbar .fav-filter{grid-column:1/3;}
+  .toolbar .fav-filter{grid-column:1;}
+  .toolbar .sort-select{grid-column:2;}
   .toolbar .btn{grid-column:3; justify-self:end; flex:none;}
   @media (max-width:640px){
     .toolbar{grid-template-columns:1fr;}
     .toolbar .fav-filter{grid-column:1;}
+    .toolbar .sort-select{grid-column:1;}
     .toolbar .btn{grid-column:1; justify-self:stretch; justify-content:center;}
   }
   /* tighter banner */
@@ -453,6 +462,12 @@
         <option value="local">Local service area</option>
       </select>
       <label class="fav-filter"><input type="checkbox" id="fav-filter-check"> <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="color:#B3362B"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Favorites only</label>
+      <select id="sort-select" class="sort-select" aria-label="Sort vendors">
+        <option value="">Sort: Recommended</option>
+        <option value="rating">Sort: Top rated</option>
+        <option value="reviews">Sort: Most reviewed</option>
+        <option value="name">Sort: A to Z</option>
+      </select>
       <button class="btn forest" id="open-vendor-form">+ List a Vendor</button>
     </div>
     <div id="promotions-strip" class="promotions-strip" style="display:none;"></div>
@@ -835,6 +850,12 @@ window.addEventListener('error', function(e){
 // the Admin Panel for now, or automatically once the Stripe webhook (see
 // supabase/functions/stripe-webhook) is deployed.
 // ============================================================
+// Optional yearly plan: create a $99/year price in Stripe, make a Payment Link for it, and paste the URL here.
+// Leave it blank and vendors only see the monthly plan. The webhook handles both the same way.
+const STRIPE_PRO_ANNUAL_LINK = '';
+const PRO_MONTHLY_TEXT = '$9.99 per month';
+const PRO_ANNUAL_TEXT  = '$99 per year';
+const PRO_ANNUAL_NOTE  = 'Save about 17% vs. monthly';
 const STRIPE_PRO_PAYMENT_LINK = 'https://buy.stripe.com/cNibJ12XLauI9lX33Vfw402';
 
 // Apple App Store rules (3.1.1 / 5.6) don't allow steering users to outside payment
@@ -1413,6 +1434,11 @@ function renderVendors(){
     const matchesFav = !favOnly || favoriteIds.has(v.vendor_id);
     return matchesQ && matchesCat && matchesSport && matchesArea && matchesFav;
   });
+  // "Recommended" keeps the default order (Featured/Pro listings first, then by rating). The other sorts are neutral.
+  const sortMode = document.getElementById('sort-select').value;
+  if(sortMode === 'rating') filtered = filtered.slice().sort((a,b)=>(b.average_rating||0)-(a.average_rating||0) || (b.total_reviews||0)-(a.total_reviews||0));
+  else if(sortMode === 'reviews') filtered = filtered.slice().sort((a,b)=>(b.total_reviews||0)-(a.total_reviews||0) || (b.average_rating||0)-(a.average_rating||0));
+  else if(sortMode === 'name') filtered = filtered.slice().sort((a,b)=>fpName(a.business_name).localeCompare(fpName(b.business_name)));
 
   const list = document.getElementById('vendors-list');
 
@@ -1448,7 +1474,7 @@ function renderVendors(){
     document.getElementById('clear-filters-btn').onclick = ()=>{
       document.getElementById('vendor-search').value = '';
       document.getElementById('clear-search').style.display = 'none';
-      ['cat-filter','sport-filter','area-filter'].forEach(id=>document.getElementById(id).value='');
+      ['cat-filter','sport-filter','area-filter','sort-select'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('fav-filter-check').checked = false;
       renderVendors();
     };
@@ -1803,12 +1829,42 @@ function openUpgradeToPro(vendorId){
     toast("Pro upgrades aren't open yet — check back soon.");
     return;
   }
-  // client_reference_id lets the Stripe webhook match payment back to this
-  // exact listing; prefilled_email is just a convenience for checkout.
-  const url = new URL(STRIPE_PRO_PAYMENT_LINK);
+  if(STRIPE_PRO_ANNUAL_LINK){ openPlanDialog(vendorId); return; }   // two plans: let them choose
+  openStripeCheckout(STRIPE_PRO_PAYMENT_LINK, vendorId);
+}
+// client_reference_id lets the Stripe webhook match the payment back to this exact listing;
+// prefilled_email is just a convenience for checkout.
+function openStripeCheckout(link, vendorId){
+  const url = new URL(link);
   url.searchParams.set('client_reference_id', vendorId);
   if(currentProfile && currentProfile.email) url.searchParams.set('prefilled_email', currentProfile.email);
   window.open(url.toString(), '_blank', 'noopener');
+}
+function openPlanDialog(vendorId){
+  let dlg = document.getElementById('plan-dialog');
+  if(!dlg){
+    dlg = document.createElement('dialog');
+    dlg.id = 'plan-dialog';
+    dlg.innerHTML = `
+      <div class="dlg-head"><h3>Choose your Pro plan</h3></div>
+      <div class="dlg-body">
+        <div class="hint" style="margin-bottom:10px;">First-place search ranking, Featured badge, promo banner and the full performance dashboard.</div>
+        <button type="button" class="plan-opt" data-plan="annual"><span class="plan-name">Yearly<span class="plan-badge">Best value</span></span><span class="plan-price" id="plan-annual-price"></span><span class="plan-note" id="plan-annual-note"></span></button>
+        <button type="button" class="plan-opt" data-plan="monthly"><span class="plan-name">Monthly</span><span class="plan-price" id="plan-monthly-price"></span><span class="plan-note">Cancel anytime</span></button>
+      </div>
+      <div class="dlg-actions"><button class="btn ghost" id="plan-cancel">Not now</button></div>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector('#plan-cancel').onclick = ()=>dlg.close();
+    dlg.querySelectorAll('.plan-opt').forEach(b=>b.onclick = ()=>{
+      dlg.close();
+      openStripeCheckout(b.dataset.plan === 'annual' ? STRIPE_PRO_ANNUAL_LINK : STRIPE_PRO_PAYMENT_LINK, dlg.dataset.vendorId);
+    });
+  }
+  dlg.dataset.vendorId = vendorId;
+  dlg.querySelector('#plan-annual-price').textContent = PRO_ANNUAL_TEXT;
+  dlg.querySelector('#plan-annual-note').textContent = PRO_ANNUAL_NOTE;
+  dlg.querySelector('#plan-monthly-price').textContent = PRO_MONTHLY_TEXT;
+  dlg.showModal();
 }
 
 async function deleteMyVendorListing(vendorId){
@@ -2022,6 +2078,7 @@ if(document.getElementById('vendor-search').value){
 document.getElementById('cat-filter').addEventListener('change', renderVendors);
 document.getElementById('sport-filter').addEventListener('change', renderVendors);
 document.getElementById('area-filter').addEventListener('change', renderVendors);
+document.getElementById('sort-select').addEventListener('change', renderVendors);
 
 // "How It Works" strip — dismissible, remembered locally per-device
 (function(){
