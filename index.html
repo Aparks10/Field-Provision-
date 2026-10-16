@@ -474,11 +474,11 @@
     main{max-width:860px; padding-top:26px;}
     .toolbar #cat-filter{grid-column:1/4;} .toolbar #sport-filter{grid-column:4/7;} .toolbar #area-filter{grid-column:7/10;}
     .toolbar{grid-template-columns:repeat(12,1fr);}
-    .toolbar .search-wrap{grid-column:1/8; grid-row:1;}
+    .toolbar .search-wrap{grid-column:1/7; grid-row:1;}
     .toolbar #open-vendor-form{grid-column:10/13; grid-row:1; justify-self:stretch;}
     .toolbar #cat-filter,.toolbar #sport-filter,.toolbar #area-filter{grid-row:2;}
     .toolbar .sort-select{grid-column:10/13; grid-row:2;}
-    .toolbar .fav-filter{grid-column:8/10; grid-row:1; padding-left:6px; justify-content:center;}
+    .toolbar .fav-filter{grid-column:7/10; grid-row:1; padding:0 8px; justify-content:center;}
     .how-it-works{padding:24px 56px 24px 30px;}
     .hiw-mission{font-size:25px;}
   }
@@ -527,6 +527,20 @@
   .btn, .help-btn, nav.tabs button, .tabs2 button, .guide-toggle button{letter-spacing:.03em; font-weight:700;}
   .hiw-title, .guide-steps strong{font-weight:700; letter-spacing:.03em;}
   .vd-section h4, .vendor-cat, .status-pill, .review-date, .user-chip .role-badge, .user-dropdown .ud-role, .admin-table th, .loading, .featured-badge, .mono{font-family:'Inter',sans-serif;}
+
+  /* ===== Phone header: logo and account on ONE row so vendors show sooner ===== */
+  @media (max-width:520px){
+    header{padding:6px 12px 4px;}
+    .header-top{flex-wrap:nowrap; gap:8px;}
+    .brand-logo{height:44px;}
+    .header-tagline{font-size:8px; letter-spacing:.07em; margin-left:2px;}
+    .header-actions{gap:6px; flex-shrink:0;}
+    .help-btn{height:36px; width:36px; padding:0; justify-content:center;}
+    .user-chip{padding:3px 8px 3px 4px; gap:5px;}
+    .user-chip .user-name, .user-chip .role-badge{display:none;}
+    nav.tabs{padding:6px 12px;}
+    main{padding-top:12px;}
+  }
 </style>
 </head>
 <body>
