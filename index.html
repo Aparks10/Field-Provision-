@@ -1208,6 +1208,8 @@ async function refreshSession(){
   renderUserArea();
   await loadFavorites();
   await updateRequestsBadge();
+  // If the person opened My Requests before sign-in finished loading, refresh it now so it doesn't keep saying "Sign in".
+  { const rv = document.getElementById('view-requests'); if(rv && rv.classList.contains('active')) renderRequests(); }
 }
 
 async function updateRequestsBadge(){
