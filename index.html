@@ -634,8 +634,8 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left;}
     <a id="about-link">About &amp; Help</a> ·
     <a id="terms-link">Terms of Service</a> ·
     <a id="privacy-link">Privacy Policy</a> ·
-    <a href="mailto:Fieldprovisionsapp@gmail.com">Contact</a> ·
-    <a id="admin-link">Admin</a>
+    <a href="mailto:Fieldprovisionsapp@gmail.com">Contact</a><span id="admin-sep" style="display:none"> ·</span>
+    <a id="admin-link" style="display:none">Admin</a>
   </div>
 </footer>
 
@@ -1210,6 +1210,7 @@ async function refreshSession(){
     currentProfile = null;
   }
   renderUserArea();
+  { const al = document.getElementById('admin-link'); if(al){ const on = (currentProfile && currentProfile.is_admin) ? '' : 'none'; al.style.display = on; const sp = document.getElementById('admin-sep'); if(sp) sp.style.display = on; } }
   await loadFavorites();
   await updateRequestsBadge();
   // If the person opened My Requests before sign-in finished loading, refresh it now so it doesn't keep saying "Sign in".
