@@ -541,6 +541,10 @@
     nav.tabs{padding:6px 12px;}
     main{padding-top:12px;}
   }
+/* ===== Date field fit (iOS) ===== */
+.row2 > div, .row2 .field{min-width:0;}
+input[type="date"]{width:100%; max-width:100%; min-width:0; box-sizing:border-box; -webkit-appearance:none; appearance:none; min-height:44px; text-align:left;}
+input[type="date"]::-webkit-date-and-time-value{text-align:left;}
 </style>
 </head>
 <body>
