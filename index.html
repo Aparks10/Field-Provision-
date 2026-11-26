@@ -545,6 +545,10 @@
 .row2 > div, .row2 .field{min-width:0;}
 input[type="date"]{width:100%; max-width:100%; min-width:0; box-sizing:border-box; -webkit-appearance:none; appearance:none; min-height:44px; text-align:left;}
 input[type="date"]::-webkit-date-and-time-value{text-align:left;}
+
+/* ===== Banner subline + founder story ===== */
+.hiw-sub{font-size:14px; color:var(--muted,#5b6358); margin:-6px 0 14px; line-height:1.4;}
+.hiw-story{font-size:13.5px; font-style:italic; color:var(--muted,#5b6358); line-height:1.5; margin-top:14px; padding-top:12px; border-top:1px solid var(--line);}
 </style>
 </head>
 <body>
@@ -575,12 +579,14 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left;}
   <div class="view active" id="view-vendors">
     <div class="how-it-works" id="how-it-works">
       <button type="button" class="hiw-close" id="hiw-close" aria-label="Dismiss">✕</button>
-      <div class="hiw-mission">Helping coaches find the right vendors, and helping vendors find the teams that need them.</div>
+      <div class="hiw-mission">Built by a coach. Find vendors beyond your zip code and compare quotes, all in one place.</div>
+      <div class="hiw-sub">Free for coaches. Real reviews from other coaches.</div>
       <div class="hiw-steps">
         <div class="hiw-step"><span class="hiw-num">1</span><div><div class="hiw-title">Browse vendors</div><div class="hiw-text">Filter by category, sport and service area.</div></div></div>
         <div class="hiw-step"><span class="hiw-num">2</span><div><div class="hiw-title">Request quotes</div><div class="hiw-text">Pick one or more vendors and send a request in a few taps.</div></div></div>
         <div class="hiw-step"><span class="hiw-num">3</span><div><div class="hiw-title">Compare &amp; connect</div><div class="hiw-text">Vendors reply to you directly. Choose the best fit.</div></div></div>
       </div>
+      <div class="hiw-story">I&rsquo;m a coach, and I got tired of hunting for vendors one at a time. I figured I&rsquo;d get better prices and better equipment by reaching vendors outside my area. So I built Field Provisions: send one request and vendors send you quotes.</div>
     </div>
     <div class="toolbar">
       <div class="search-wrap">
