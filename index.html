@@ -581,6 +581,12 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left;}
 .hiw-mission{font-family:'Oswald',sans-serif; text-transform:uppercase; font-weight:600; font-size:27px; letter-spacing:.03em; line-height:1.2; margin:0 0 12px; text-wrap:balance;}
 .hiw-sub{font-size:15px; letter-spacing:0;}
 @media (max-width:520px){ .hiw-mission{font-size:21px; letter-spacing:.025em;} .hiw-sub{font-size:14.5px;} }
+
+/* ===== Banner headline: short hook + sentence-case line ===== */
+.hiw-mission{font-size:30px; margin:0 0 8px;}
+.hiw-mission-rest{display:block; margin-top:8px; font-family:'Inter',sans-serif; text-transform:none; font-size:17px; font-weight:500; letter-spacing:0; line-height:1.4; color:var(--black);}
+.hiw-sub{margin:0 0 16px; color:#3b3f44;}
+@media (max-width:520px){ .hiw-mission{font-size:24px;} .hiw-mission-rest{font-size:15.5px; margin-top:6px;} }
 </style>
 </head>
 <body>
@@ -614,7 +620,7 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left;}
   <div class="view active" id="view-vendors">
     <div class="how-it-works" id="how-it-works">
       <button type="button" class="hiw-close" id="hiw-close" aria-label="Dismiss">✕</button>
-      <div class="hiw-mission">Built by a coach. Find vendors beyond your zip code and compare quotes, all in one place.</div>
+      <div class="hiw-mission">Built by a coach.<span class="hiw-mission-rest">Find vendors beyond your zip code and compare quotes, all in one place.</span></div>
       <div class="hiw-sub"><strong>Free for coaches.</strong> Real reviews from other coaches.</div>
       <div class="hiw-steps">
         <div class="hiw-step"><span class="hiw-num">1</span><div><div class="hiw-title">Browse vendors</div><div class="hiw-text">Filter by category, sport and service area.</div></div></div>
