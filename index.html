@@ -562,6 +562,20 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left;}
 .empty{background:#fff; border:1px solid var(--line); border-radius:14px; padding:44px 24px; color:#3b3f44; font-size:15.5px; line-height:1.5; box-shadow:0 1px 2px rgba(0,0,0,.04);}
 .empty .display{font-size:26px; margin-bottom:8px;}
 .empty .btn-cta{padding:12px 22px; font-size:15px; border-radius:10px;}
+
+/* ===== Header lockup (shield + wordmark) ===== */
+.brand-lockup{flex-direction:row; align-items:center; gap:14px;}
+.brand-shield{height:66px; width:auto; display:block;}
+.brand-text{display:flex; flex-direction:column; gap:6px; justify-content:center;}
+.brand-wordmark{height:24px; width:auto; display:block;}
+.brand-lockup .header-tagline{margin-left:1px; white-space:nowrap; font-size:11px;}
+@media (max-width:520px){
+  .brand-lockup{gap:10px;}
+  .brand-shield{height:48px;}
+  .brand-wordmark{height:17px;}
+  .brand-text{gap:4px;}
+  .brand-lockup .header-tagline{font-size:8.5px; letter-spacing:.08em;}
+}
 </style>
 </head>
 <body>
@@ -570,9 +584,12 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left;}
 
 <header>
   <div class="header-top">
-  <div class="brand-block">
-  <picture><source srcset="logo.webp" type="image/webp"><img class="brand-logo" src="logo.png" alt="Field Provisions — The team behind your team"></picture>
-  <div class="header-tagline">The Team Behind Your Team.</div>
+  <div class="brand-block brand-lockup">
+  <picture><source srcset="logo-shield.webp" type="image/webp"><img class="brand-shield" src="logo-shield.png" alt="Field Provisions shield logo"></picture>
+  <div class="brand-text">
+    <picture><source srcset="logo-wordmark.webp" type="image/webp"><img class="brand-wordmark" src="logo-wordmark.png" alt="Field Provisions"></picture>
+    <div class="header-tagline">The Team Behind Your Team.</div>
+  </div>
   </div>
   <div class="header-actions">
     <button type="button" class="help-btn" id="help-btn" aria-label="Help and guide"><span class="help-q">?</span><span class="help-label">Help</span></button>

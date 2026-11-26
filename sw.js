@@ -6,7 +6,7 @@
 // (An earlier version cached those too, which could serve stale/failed data and
 // cause "failed to fetch" errors on login.)
 
-const CACHE_NAME = "field-provisions-v4";
+const CACHE_NAME = "field-provisions-v5";
 
 const CORE_ASSETS = [
   "/",
